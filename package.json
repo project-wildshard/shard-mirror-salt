@@ -1,0 +1,20 @@
+{
+  "name": "mirror-salt",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.34.9",
+  "engines": {
+    "node": ">=24.18.0"
+  },
+  "scripts": {
+    "check": "wildshard check .",
+    "watch": "wildshard watch ."
+  },
+  "dependencies": {
+    "@wildshard/engine": "0.1.32",
+    "@wildshard/format": "npm:@wildshard/shard-format@0.13.0",
+    "@wildshard/sdk": "0.3.9",
+    "three": "0.186.0"
+  }
+}
