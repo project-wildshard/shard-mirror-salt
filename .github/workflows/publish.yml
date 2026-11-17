@@ -122,7 +122,9 @@ jobs:
         run: node scripts/publish-shard.mjs version "${{ steps.product.outputs.slug }}" "${{ inputs.version }}"
       - name: Install phone WebKit for prepare
         run: |
-          pw="$(node -e "const {dirname}=require('node:path');const sdk=dirname(require.resolve('@wildshard/sharddev/package.json'));console.log(dirname(require.resolve('playwright/package.json',{paths:[sdk]})))")"
+          # sdk 0.4 (SDK-SPLIT): prepare's playwright is @wildshard/dev's, reached through @wildshard/cli; an older
+          # shard reaches it through the sdk it aliases as @wildshard/sharddev.
+          pw="$(node -e "const {dirname,join}=require('node:path'),{realpathSync,existsSync}=require('node:fs');const bases=[];if(existsSync('node_modules/@wildshard/cli'))bases.push(realpathSync(join(realpathSync('node_modules/@wildshard/cli'),'..','dev')));if(existsSync('node_modules/@wildshard/sharddev'))bases.push(realpathSync('node_modules/@wildshard/sharddev'));for(const b of bases){try{console.log(dirname(require.resolve('playwright/package.json',{paths:[b]})));process.exit(0)}catch{}}console.error('no playwright under @wildshard/cli or @wildshard/sharddev');process.exit(1)")"
           if [ "$RUNNER_OS" = Linux ]; then node "$pw/cli.js" install --with-deps webkit; else node "$pw/cli.js" install webkit; fi
       - name: Prepare in phone WebKit
         env:
