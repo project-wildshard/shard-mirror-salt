@@ -1,7 +1,7 @@
 // The cleanroom's gate (meta SHARD-SOURCE SS11b): headless, muted Chromium on Metal, 60 fps cap. Desktop 1600x900 runs the
 // race line for 10 s and reports the median frame rate; then the named shots, desktop and the phone look at 874x402.
 // usage: node scripts/fps.mjs <outDir> [baseUrl]
-import { chromium } from 'playwright';
+import { chromium } from '../../scripts/browser-playwright.mjs';
 import { mkdirSync, writeFileSync } from 'node:fs';
 const out = process.argv[2] || '../tmp/cleanroom';
 const base = process.argv[3] || 'http://127.0.0.1:5231/';
