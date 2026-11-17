@@ -26,11 +26,11 @@ const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
 const smooth = (a: number, b: number, x: number): number => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
 /** The race runs from the start (+z) toward the low sun (-z). */
-export const SPAWN = { x: -12, z: 170, yaw: 0 };
+export const SPAWN = { x: -14, z: 150, yaw: 0 };
 export interface Gate { readonly x: number; readonly z: number; readonly yaw: number; readonly width: number; readonly height: number }
 /** The race gates: gate 0 is the start line, gate 8 the finish; one arch over each of 1 to 8. */
 export const GATES: readonly Gate[] = Array.from({ length: 9 }, (_, i) => ({
-  x: Math.sin(i * 0.9) * 22, z: 150 - i * 38, yaw: Math.sin(i) * 0.35, width: 8 + (i % 3), height: 10 + (i % 4),
+  x: Math.sin(i * 0.9) * 14, z: 140 - i * 30, yaw: Math.sin(i) * 0.35, width: 8 + (i % 3), height: 10 + (i % 4),
 }));
 export const FLOOD_RADIUS = 178;
 

@@ -22,10 +22,10 @@ export const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) /
 
 /** The cell: 500 m square, x and z from -250 to 250; the race runs from the start (+z) toward the sun (-z). */
 export const SUN_DIRECTION = new THREE.Vector3(0.15, 0.06, -1).normalize();
-export const SPAWN = { x: 4, z: 164, yaw: 0 };
+export const SPAWN = { x: -14, z: 150, yaw: 0 };
 /** The race gates: one under each arch, weaving down the flat. Gate 0 is the start line, the last the finish. */
 export const GATES = Array.from({ length: 9 }, (_, i) => {
-  const z = 150 - i * 38, x = Math.sin(i * 0.9) * 22;
+  const z = 140 - i * 30, x = Math.sin(i * 0.9) * 14;
   return { x, z, yaw: Math.sin(i) * 0.35, width: 8 + (i % 3), height: 10 + (i % 4) };
 });
 export const FLOOD_RADIUS = 178;
