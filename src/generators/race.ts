@@ -1,7 +1,7 @@
 // The race (SHARD-SOURCE SS12b): "Run the arches". Each gate is a region trigger that fires only once the gate before
-// it has (`when`), so the gates count in order; one quest step per gate, each with a marker on its gate. A timer and a
-// land-sail that moves under the wind have no host in the format yet (meta SHARD-SOURCE rows SS-MS1, SS-MS2), so the
-// race is run on foot.
+// it has (`when`), so the gates count in order; one quest step per gate, each with a marker on its gate. The run is timed
+// by `world.race` in `world.ts` (SS-MS1b). A land-sail that moves under the wind has no host in the format yet (meta
+// SHARD-SOURCE SS-MS2), so the race is run on foot.
 import { GATES } from './world';
 
 const flag = (i: number): string => `mirror.gate.${String(i)}`;
