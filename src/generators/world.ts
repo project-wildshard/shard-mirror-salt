@@ -160,7 +160,7 @@ export function gates(part: THREE.Group, M: Materials): void {
 }
 
 /** One land-sail: a three-wheeled cart, a mast and a big triangular sail that luffs in the wind. */
-function landSail(M: Materials, sailMaterial: THREE.Material): THREE.Group {
+function landSail(M: Materials, sailMaterial: THREE.Material, luff = true): THREE.Group {
   const sail = new THREE.Group();
   const hull = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.25, 3.6), M.wood); hull.position.y = 0.7; sail.add(solid(hull));
   const beam = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.15, 0.2), M.wood); beam.position.set(0, 0.62, 0.9); sail.add(beam);
@@ -171,17 +171,29 @@ function landSail(M: Materials, sailMaterial: THREE.Material): THREE.Group {
   const shape = new THREE.Shape(); shape.moveTo(0, 0); shape.lineTo(0, 5.2); shape.quadraticCurveTo(1.4, 2.2, 2.8, 0.1); shape.lineTo(0, 0);
   const cloth = new THREE.Mesh(new THREE.ShapeGeometry(shape, 12), sailMaterial);
   cloth.position.set(0.05, 1.0, -0.4); cloth.rotation.y = Math.PI / 2 - 0.5;
-  sail.add(animate(cloth, sway({ rate: 0.2, amount: 0.04 })));
+  sail.add(luff ? animate(cloth, sway({ rate: 0.2, amount: 0.04 })) : cloth); // a ridden sail is a panel: its cloth holds still
   sail.traverse((o) => { if (o instanceof THREE.Mesh) o.castShadow = true; });
   return sail;
 }
 
-/** The sails: three on the start line, two racing far down the flat. */
+/** Where the wind blows toward, on the ground plane: the flags stream with it and the land-sail is pushed by it. */
+export const WIND = new THREE.Vector2(0.8, -0.6).normalize();
+const gate = (i: number): Gate => GATES[i] ?? GATES[0] ?? { x: 0, z: 0, yaw: 0, width: 8, height: 10 };
+/** The teal land-sail on the start line, the one a player rides (SHARD-SOURCE SS-MS2a4): where it stands and its heading. */
+export const RIDDEN_SAIL = { x: gate(0).x + 1, z: gate(0).z + 7, yaw: -0.05 };
+/** The ridden sail: boarded beside it, steered down the arch line, pushed by the wind the flags show. */
+export function riddenSail(world: ShardWorld, M: Materials): void {
+  world.part('land-sail', (part) => {
+    const s = landSail(M, M.sailTeal, false); s.position.set(RIDDEN_SAIL.x, 0, RIDDEN_SAIL.z); s.rotation.y = RIDDEN_SAIL.yaw; part.add(s);
+  }, { panel: 'salt.land-sail', vehicle: { speed: 9, turn: 1, boost: 1.6, accel: 4, ground: true, heading: RIDDEN_SAIL.yaw,
+    wind: { toward: [WIND.x, -WIND.y], push: 4 }, board: 'Board the land-sail', leave: 'Leave the land-sail' } });
+}
+
+/** The sails: two more on the start line, two racing far down the flat (the teal one is `riddenSail`). */
 export function sails(part: THREE.Group, M: Materials): void {
-  const gate = (i: number): Gate => GATES[i] ?? GATES[0] ?? { x: 0, z: 0, yaw: 0, width: 8, height: 10 };
   const g0 = gate(0), g3 = gate(3), g5 = gate(5);
   const placed: [number, number, number, THREE.Material][] = [
-    [g0.x - 6, g0.z + 5, -0.3, M.sailRed], [g0.x + 1, g0.z + 7, -0.05, M.sailTeal], [g0.x + 8, g0.z + 5, 0.2, M.sailGold],
+    [g0.x - 6, g0.z + 5, -0.3, M.sailRed], [g0.x + 8, g0.z + 5, 0.2, M.sailGold],
     [g3.x - 4, g3.z + 14, 0.35, M.sailGold], [g5.x + 3, g5.z + 20, -0.25, M.sailRed],
   ];
   for (const [x, z, yaw, mat] of placed) {
@@ -190,7 +202,6 @@ export function sails(part: THREE.Group, M: Materials): void {
 }
 
 /** Wind flags: tall poles along the course whose streamers show where the wind blows from. */
-export const WIND = new THREE.Vector2(0.8, -0.6).normalize();
 export function windFlags(part: THREE.Group, M: Materials): void {
   const rand = stream(41);
   const poles: THREE.BufferGeometry[] = [];
@@ -249,6 +260,7 @@ export function buildMirrorSalt(world: ShardWorld): void {
   world.part('arches', (part) => { arches(part, M); });
   world.part('gates', (part) => { gates(part, M); });
   world.part('sails', (part) => { sails(part, M); });
+  riddenSail(world, M);
   world.part('flags', (part) => { windFlags(part, M); });
   world.part('dust', (part) => { dust(part); });
   world.spawn(SPAWN.x, 1, SPAWN.z, SPAWN.yaw);

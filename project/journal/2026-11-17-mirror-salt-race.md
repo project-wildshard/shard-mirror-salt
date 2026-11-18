@@ -21,3 +21,11 @@ The arch line is now a timed race (`world.race`), and a finish lowers gates 1 to
 run has to pass every arch again. That needs sdk 0.4.0, which has no `wildshard` bin of its own: `@wildshard/cli` 0.4.0
 brings the command, and the engine pin and its override go (nothing here imports the engine). The hero was recaptured
 on the v0.1.37 dev client, since sdk 0.4.0's default client (engine 0.1.35) refuses a shard with races.
+
+## The land-sail rides (SS-MS2a4, opus-ss10k)
+
+The teal land-sail on the start line is now a vehicle (`world.part(..., { vehicle })`, sdk 0.4.x): board it with E, steer
+it down the arch line with the stick, BOOST on sprint, and the wind the flags show pushes it (`wind.toward` is the flags'
+`WIND`, push 4 m/s). Its cloth holds still, because a ridden part is a panel and a panel cannot sway. The repo moved to
+sdk and cli 0.4.3 (SDK-SPLIT SP13) and overrides `@wildshard/engine` to 0.1.39, the first npm engine whose author
+proof knows races and steer movers; sdk 0.4.3's dev still pins 0.1.35, which refused the sail ("Missing track").
