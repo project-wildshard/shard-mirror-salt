@@ -1,0 +1,57 @@
+// MIRROR-SALT-ZONE MSZ27 (meta): the Mirror, the deep still flood west of the arches. The salt under it darkens to a deep
+// blue-grey (world.ts `groundColour`), so the flood over it mirrors the dusk sky darker and stiller than the flat; the salt
+// skaters' camp skims its middle; a land-sail that never finished lies half sunk by the shore road, its chest beside it
+// (MSZ38 fills the chest). Each of the region's places is a region trigger.
+import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { solid, type ShardWorld } from '@wildshard/sdk/scene/author';
+import { groundHeight } from './ground.ts';
+import { PLACES, type RegionId } from './layout.ts';
+import { camp, saltSkaters, STRIKES } from './creatures.ts';
+import { landSail, type Materials } from './world';
+
+const place = (id: string): { x: number; z: number; radius: number } => {
+  const p = PLACES.find((q) => q.id === id);
+  if (p === undefined) throw new Error(`Mirror Salt has no place ${id}`);
+  return { ...p.at, radius: p.radius };
+};
+/** Where the Mirror's pieces stand. */
+export const MIRROR = { DEEP: place('deep-mirror'), WRECK: place('sunken-sail') } as const;
+/** The flag a player raises on finding a place: `mirror.place.<id>`. */
+export const placeFlag = (id: string): string => `mirror.place.${id}`;
+
+/** A region trigger on each of a region's named places. Returns their flags. */
+export function placeTriggers(world: ShardWorld, region: RegionId): string[] {
+  return PLACES.filter((p) => p.region === region).map((p) => {
+    const at = new THREE.Object3D(); at.position.set(p.at.x, groundHeight(p.at.x, p.at.z), p.at.z); world.scene.add(at);
+    world.trigger(placeFlag(p.id), at, { radius: p.radius });
+    return placeFlag(p.id);
+  });
+}
+
+/** The sunken sail: the cleanroom's land-sail rolled on its side and settled into the salt, its mast snapped and its cloth
+ *  slack in the water, and an iron-banded chest beside its hull. */
+function sunkenSail(part: THREE.Group, M: Materials): void {
+  const { x, z } = MIRROR.WRECK;
+  const torn = new THREE.MeshStandardMaterial({ color: '#7a9e9a', roughness: 0.9, side: THREE.DoubleSide });
+  const wreck = landSail(M, torn, false);
+  wreck.position.set(x, -0.35, z); wreck.rotation.set(0.15, 0.9, 1.05); part.add(wreck);
+  const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 3.2, 8), M.wood); mast.position.set(x + 2.6, 0.2, z - 1.5); mast.rotation.set(0.1, 0.3, 1.45); part.add(mast);
+  const hull = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.0, 3.8), M.wood); hull.position.set(x, 0.3, z); hull.rotation.y = 0.9; hull.visible = false; part.add(solid(hull));
+  const cx = x - 2.2, cz = z + 1.6;
+  const chest = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.55, 0.6), M.wood); chest.position.set(cx, 0.27, cz); chest.rotation.y = 0.4; part.add(solid(chest));
+  const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.9, 10, 1, false, 0, Math.PI), M.wood); lid.rotation.set(0, 0.4, Math.PI / 2); lid.position.set(cx, 0.55, cz); part.add(lid);
+  const bands: THREE.BufferGeometry[] = [];
+  for (const o of [-0.3, 0.3]) bands.push(new THREE.BoxGeometry(0.06, 0.62, 0.64).translate(o, 0, 0).rotateY(0.4).translate(cx, 0.3, cz).toNonIndexed());
+  for (const g of bands) g.deleteAttribute('uv');
+  part.add(new THREE.Mesh(mergeGeometries(bands), M.post));
+  part.traverse((o) => { if (o instanceof THREE.Mesh) o.castShadow = true; });
+}
+
+/** The Mirror: the skaters' camp, the sunken sail, its places. Returns the camp's spawn ids. */
+export function buildMirror(world: ShardWorld, M: Materials): { skaters: string[]; places: string[] } {
+  world.part('sunken-sail', (part) => { sunkenSail(part, M); });
+  saltSkaters(world);
+  const skaters = camp(world, 'salt-skater', MIRROR.DEEP, { species: 'salt.skater', variant: 'pale', brain: 'mirror.skater-pursuit', strike: STRIKES.skaterNip.id, count: 7, radius: 22, seed: 2701 });
+  return { skaters, places: placeTriggers(world, 'mirror') };
+}

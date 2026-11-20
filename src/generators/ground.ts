@@ -135,3 +135,12 @@ export function groundHeight(x: number, z: number): number {
   const road = roadAt(x, z);
   return road === null ? land : land + (road.y - land) * road.weight;
 }
+
+const MIRROR_RECT: Rect = REGIONS.find((r) => r.id === 'mirror')?.rect ?? { x0: 0, z0: 0, x1: 0, z1: 0 };
+/** MSZ27: how deep in the Mirror (x, z) lies, 0 at its edge to 1 thirty metres in (and 0 on a road): the salt under it
+ *  darkens to a deep blue-grey, so the flood over it mirrors the sky darker and stiller than the flat's. */
+export function mirrorDeep(x: number, z: number): number {
+  const r = MIRROR_RECT, inside = Math.min(x - r.x0, r.x1 - x, z - r.z0, r.z1 - z);
+  const road = roadAt(x, z);
+  return smooth(0, 30, inside) * (1 - (road === null ? 0 : smooth(0.3, 0.9, road.weight)));
+}

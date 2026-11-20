@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { animate, drift, solid, sway, Water, type ShardWorld } from '@wildshard/sdk/scene/author';
 import { paintCanvas } from '@wildshard/sdk/scene/canvas';
-import { fbm, groundHeight, roadAt, smooth } from './ground.ts';
+import { fbm, groundHeight, mirrorDeep, roadAt, smooth } from './ground.ts';
 import { FLOOD_RADIUS, GATES, SPAWN } from './layout.ts';
 import { duskSky, SUN_DIRECTION } from './sky';
 
@@ -19,11 +19,11 @@ export function stream(seed: number): () => number {
 const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
 
 const SALT = new THREE.Color('#f3e6e2'), ROSE = new THREE.Color('#e8c9c2'), ROCK = new THREE.Color('#b0785f'), ROCK_HI = new THREE.Color('#d39a7c');
-const TRACK = new THREE.Color('#b99486'), TRACK_DARK = new THREE.Color('#9c7668');
+const DEEP = new THREE.Color('#5d6878'), TRACK = new THREE.Color('#b99486'), TRACK_DARK = new THREE.Color('#9c7668');
 /** Salt white to rose at the waterline, then sandstone up the mesas (linear RGB); a road is packed rose-brown track. */
 export function groundColour(x: number, z: number): [number, number, number] {
   const y = groundHeight(x, z);
-  const salt = SALT.clone().lerp(ROSE, fbm(x * 0.03, z * 0.03, 3) * 0.7);
+  const salt = SALT.clone().lerp(ROSE, fbm(x * 0.03, z * 0.03, 3) * 0.7).lerp(DEEP, mirrorDeep(x, z) * 0.8);
   const rock = ROCK.clone().lerp(ROCK_HI, smooth(6, 40, y));
   const c = salt.lerp(rock, smooth(0.4, 3.5, y));
   const road = roadAt(x, z);
