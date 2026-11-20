@@ -8,7 +8,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { animate, drift, solid, sway, Water, type ShardWorld } from '@wildshard/sdk/scene/author';
 import { paintCanvas } from '@wildshard/sdk/scene/canvas';
 import { fbm, groundHeight, mirrorDeep, roadAt, smooth } from './ground.ts';
-import { FLOOD_RADIUS, GATES, SPAWN } from './layout.ts';
+import { FLOOD_RADIUS, GATES, ROADS, SPAWN } from './layout.ts';
 import { duskSky, SUN_DIRECTION } from './sky';
 
 /** Seeded randomness: each section owns its stream, so editing one never moves another. */
@@ -212,6 +212,13 @@ export function buildMirrorSalt(world: ShardWorld): Materials {
   const M = materials();
   dusk(world);
   world.ground(groundHeight, { colourAt: groundColour, material: new THREE.MeshStandardMaterial({ roughness: 0.95 }) });
+  world.vehicleSurface({
+    base: 0.8,
+    patches: [
+      { shape: 'circle', at: [0, 0], radius: FLOOD_RADIUS, grip: 0.35 },
+      ...ROADS.map(road => ({ shape: 'road' as const, line: road.line.map(({ x, z }): [number, number] => [x, z]), width: road.width, grip: 1 })),
+    ],
+  });
   world.part('flood', (part) => { flood(part); });
   world.part('crust', (part) => { crust(part, M); });
   world.part('arches', (part) => { arches(part, M); });
