@@ -219,11 +219,6 @@ export function buildMirrorSalt(world: ShardWorld): Materials {
   world.part('flags', (part) => { windFlags(part, M); });
   world.part('dust', (part) => { dust(part); });
   world.spawn(SPAWN.x, 1, SPAWN.z, SPAWN.yaw);
-  // SS-MS1b: the arch line is timed, from the GO line's flag to the finish arch's; the page shows the clock and the best.
-  // SS-MS1c: a finish lowers arches 1 to 7 too, so the next run counts every arch again
-  world.race('mirror.arches', {
-    start: 'mirror.gate.0', stop: `mirror.gate.${String(GATES.length - 1)}`, fact: 'mirror.arches', cap: 600,
-    resets: GATES.slice(1, -1).map((_, i) => `mirror.gate.${String(i + 1)}`),
-  });
+  // SS-MS1b: the arch line is timed (MSZ32: its race row, now driven, is `courses.ts` `courseRows`)
   return M;
 }
