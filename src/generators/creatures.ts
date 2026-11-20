@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import type { ShardRows } from '@wildshard/format/rows';
 import type { ShardWorld } from '@wildshard/sdk/scene/author';
+import { campRing } from './camps.ts';
 import { groundHeight } from './ground.ts';
 
 type Strike = ShardRows['strikes'][number];
@@ -268,10 +269,9 @@ export function saltSkaters(world: ShardWorld): void {
 
 /** A camp: `count` bodies of `species` in a ring of `radius` round `at`, each respawning. Returns the spawn ids. */
 export function camp(world: ShardWorld, id: string, at: { x: number; z: number }, options: { species: string; variant: string; brain: string; strike: string; count: number; radius: number; seed: number }): string[] {
-  return Array.from({ length: options.count }, (_, i) => {
-    const a = (i / options.count) * Math.PI * 2 + 0.4, r = options.radius * (0.55 + 0.45 * ((i * 37) % 10) / 10);
+  return campRing(at, options.count, options.radius).map((p, i) => {
     const sid = `${id}-${String(i + 1)}`;
-    world.spawnAt(sid, spot(world, at.x + Math.sin(a) * r, at.z + Math.cos(a) * r, a), { species: options.species, variant: options.variant, brain: options.brain, strike: options.strike, seed: options.seed + i, scale: 1, respawn: 60 });
+    world.spawnAt(sid, spot(world, p.x, p.z, p.yaw), { species: options.species, variant: options.variant, brain: options.brain, strike: options.strike, seed: options.seed + i, scale: 1, respawn: 60 });
     return sid;
   });
 }

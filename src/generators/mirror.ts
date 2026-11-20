@@ -9,7 +9,7 @@ import { groundHeight } from './ground.ts';
 import { PLACES, type RegionId } from './layout.ts';
 import { camp, saltSkaters, STRIKES } from './creatures.ts';
 import { landSail, type Materials } from './world';
-import { CAMPS } from './camps';
+import { CAMPS, SAIL_PACK } from './camps';
 
 const place = (id: string): { x: number; z: number; radius: number } => {
   const p = PLACES.find((q) => q.id === id);
@@ -54,5 +54,7 @@ export function buildMirror(world: ShardWorld, M: Materials): { skaters: string[
   world.part('sunken-sail', (part) => { sunkenSail(part, M); });
   saltSkaters(world);
   const skaters = camp(world, CAMPS.skaters.id, MIRROR.DEEP, { species: 'salt.skater', variant: 'pale', brain: 'mirror.skater-pursuit', strike: STRIKES.skaterNip.id, count: CAMPS.skaters.count, radius: 22, seed: 2701 });
-  return { skaters, places: placeTriggers(world, 'mirror') };
+  // MSZ37: a second skater pack skates past the Sunken Sail, where the shore road ends
+  const sailSkaters = camp(world, CAMPS.sailSkaters.id, SAIL_PACK, { species: 'salt.skater', variant: 'pale', brain: 'mirror.skater-pursuit', strike: STRIKES.skaterNip.id, count: CAMPS.sailSkaters.count, radius: SAIL_PACK.radius, seed: 2721 });
+  return { skaters: [...skaters, ...sailSkaters], places: placeTriggers(world, 'mirror') };
 }
