@@ -20,6 +20,10 @@ export const STRIKES = {
   kingCrush: strike('pans.king.crush', 'brineKing', { shape: { kind: 'point', radius: 2 }, windup: 1, active: 0.2, recover: 0.6, cooldown: 0.5, range: 4, damage: 14, weight: 3, speed: 0 } as Omit<Strike, 'id' | 'tags'>),
   // MSZ29: a dust hound's snapping bite
   houndBite: strike('wrecks.hound.bite', 'dustHound', { shape: { kind: 'point', radius: 1.3 }, windup: 0.35, active: 0.12, recover: 0.45, cooldown: 1, range: 1.7, damage: 6, weight: 1, speed: 0 } as Omit<Strike, 'id' | 'tags'>),
+  // MSZ30: a glass wisp's dive, a vulture's stoop, the Salt Colossus's slam (MSZ36 grows its moves)
+  wispDive: strike('canyon.wisp.dive', 'glassWisp', { shape: { kind: 'sphere', radius: 1.6 }, windup: 1, active: 1, recover: 0.6, cooldown: 5, range: 12, damage: 7, weight: 1, speed: 0 } as Omit<Strike, 'id' | 'tags'>),
+  vultureStoop: strike('rim.vulture.stoop', 'mesaVulture', { shape: { kind: 'sphere', radius: 1.6 }, windup: 1, active: 1, recover: 0.8, cooldown: 7, range: 14, damage: 6, weight: 1, speed: 0 } as Omit<Strike, 'id' | 'tags'>),
+  colossusSlam: strike('canyon.colossus.slam', 'saltColossus', { shape: { kind: 'point', radius: 3 }, windup: 1.3, active: 0.25, recover: 0.8, cooldown: 0.5, range: 6, damage: 18, weight: 3, speed: 0 } as Omit<Strike, 'id' | 'tags'>),
   kingSpray: strike('pans.king.spray', 'brineKing', { shape: { kind: 'arc', radius: 5, halfAngle: 0.9 }, windup: 1, active: 0.3, recover: 0.8, cooldown: 2, range: 6, damage: 9, weight: 1, speed: 0 } as Omit<Strike, 'id' | 'tags'>),
 } as const;
 
@@ -30,6 +34,13 @@ export const BRAINS = [
   // MSZ28: a crab scuttles at whoever walks its stretch of the pan road and gives up sooner
   { id: 'pans.crab-pursuit', kind: 'pursue', awareRadius: 12, leashRadius: 24, speed: 1.6, returnSpeed: 2.5, stopDistance: 1.2, turnRate: 5,
     thinkDivisor: 3, attackCooldownTicks: 55, wanderRadius: 5, wanderEveryTicks: 360 },
+  // MSZ30: the glass wisps circle the Glass Gorge and dive; the vultures circle high over the north-east rim and stoop
+  { id: 'canyon.wisp-dive', kind: 'orbit-diver', strike: 'canyon.wisp.dive', home: { x: 45, z: -150, r: 9, y: 5 }, circleSpeed: 5,
+    hangAltitude: 5, stalkSpeed: 7, diveSpeed: 12, restSeconds: 6, noticeRadius: 18, giveUpRadius: 30, initialRestSeconds: 3, stalkMaxSeconds: 8,
+    riseMargin: 1.5, targetHeight: 1.2, alignRadius: 2.5, alignTolerance: 1.4 },
+  { id: 'rim.vulture-stoop', kind: 'orbit-diver', strike: 'rim.vulture.stoop', home: { x: 150, z: -120, r: 22, y: 26 }, circleSpeed: 6,
+    hangAltitude: 26, stalkSpeed: 8, diveSpeed: 15, restSeconds: 10, noticeRadius: 22, giveUpRadius: 40, initialRestSeconds: 6, stalkMaxSeconds: 8,
+    riseMargin: 2, targetHeight: 1.2, alignRadius: 3, alignTolerance: 1.6 },
   // MSZ29: a hound lopes out at whoever enters the field and runs them down
   { id: 'wrecks.hound-pursuit', kind: 'pursue', awareRadius: 16, leashRadius: 32, speed: 2.4, returnSpeed: 3, stopDistance: 1.3, turnRate: 6,
     thinkDivisor: 3, attackCooldownTicks: 50, wanderRadius: 7, wanderEveryTicks: 300 },
@@ -155,12 +166,90 @@ function houndBody(): { body: THREE.Group; clips: THREE.AnimationClip[] } {
   ] };
 }
 
+/** A glass wisp: a shard of canyon glass, amber at its heart and teal at its edges, spinning slow on a `body` bone, its
+ *  bright core the `head`. */
+function glassWispBody(): { body: THREE.Group; clips: THREE.AnimationClip[] } {
+  const root = new THREE.Group(), rest: Xyz = [0, 0.6, 0], body = bone('body', root, ...rest);
+  const glass = new THREE.MeshStandardMaterial({ color: '#9fe3d8', roughness: 0.15, metalness: 0.1, emissive: '#3fb0a8', emissiveIntensity: 0.6, transparent: true, opacity: 0.8 });
+  const core = paint('#ffd9a0', '#ffb347');
+  const shard = mesh(body, new THREE.OctahedronGeometry(0.42, 0), glass); shard.scale.set(0.7, 1.3, 0.7);
+  for (const [x, y, r] of [[0.32, -0.1, 0.5], [-0.3, 0.12, -0.6]] as const) { const sliver = mesh(body, new THREE.OctahedronGeometry(0.18, 0), glass, x, y, 0); sliver.rotation.z = r; sliver.scale.y = 1.8; }
+  mesh(bone('head', body, 0, 0, 0.05), new THREE.SphereGeometry(0.14, 10, 8), core);
+  return { body: root, clips: [
+    shift('idle', 'body', rest, [[0, 0, 0], [0, 0.08, 0], [0, 0, 0]], 1.4),
+    shift('walk', 'body', rest, [[0, 0, 0], [0, 0.05, 0.06], [0, 0, 0]], 0.6),
+    shift('attack', 'body', rest, [[0, 0, 0], [0, 0.2, -0.2], [0, -0.1, 0.5], [0, 0, 0]], 1),
+    shift('hit', 'body', rest, [[0, 0, 0], [0, 0.06, -0.2], [0, 0, 0]], 0.3),
+    shift('die', 'body', rest, [[0, 0, 0], [0, -0.55, 0]], 0.8),
+  ] };
+}
+
+/** A mesa vulture: a dark broad-winged bird with a bare pink head on its `head`, its wings spread on the `body`. */
+function vultureBody(): { body: THREE.Group; clips: THREE.AnimationClip[] } {
+  const root = new THREE.Group(), rest: Xyz = [0, 0.6, 0], body = bone('body', root, ...rest);
+  const feather = paint('#3a2e2a'), pale = paint('#8a7a6a'), skin = paint('#d8907a'), beak = paint('#e8d0a0');
+  const torso = mesh(body, new THREE.CapsuleGeometry(0.22, 0.6, 4, 8), feather); torso.rotation.x = Math.PI / 2;
+  for (const s of [-1, 1]) {
+    const wing = mesh(body, new THREE.BoxGeometry(1.5, 0.05, 0.6), feather, s * 0.9, 0.05, -0.05); wing.rotation.z = s * 0.12;
+    const tip = mesh(body, new THREE.BoxGeometry(0.6, 0.04, 0.4), pale, s * 1.85, 0.12, -0.15); tip.rotation.z = s * 0.25;
+  }
+  const tail = mesh(body, new THREE.BoxGeometry(0.4, 0.04, 0.45), feather, 0, 0, -0.6); tail.rotation.x = 0.1;
+  const head = bone('head', body, 0, 0.12, 0.5);
+  mesh(head, new THREE.SphereGeometry(0.12, 10, 8), skin);
+  const bill = mesh(head, new THREE.ConeGeometry(0.05, 0.2, 6), beak, 0, -0.02, 0.15); bill.rotation.x = Math.PI / 2 + 0.3;
+  mesh(body, new THREE.TorusGeometry(0.13, 0.05, 6, 12), pale, 0, 0.05, 0.38).rotation.x = Math.PI / 2;
+  return { body: root, clips: [
+    shift('idle', 'body', rest, [[0, 0, 0], [0, 0.1, 0], [0, 0, 0]], 1.6),
+    shift('walk', 'body', rest, [[0, 0, 0], [0, 0.15, 0], [0, 0, 0]], 1.0),
+    shift('attack', 'body', rest, [[0, 0, 0], [0, 0.25, -0.2], [0, -0.2, 0.6], [0, 0, 0]], 1),
+    shift('hit', 'body', rest, [[0, 0, 0], [0, 0.1, -0.2], [0, 0, 0]], 0.3),
+    shift('die', 'body', rest, [[0, 0, 0], [0, -0.55, 0]], 0.8),
+  ] };
+}
+
+/** The Salt Colossus: a hulk of grey-white salt crystal, its chest a cracked block with an amber glow in the seams, a
+ *  small head with burning eyes, crystal spikes off its shoulders, huge arms on `armL` and `armR` ending in fists of
+ *  rock salt. It sways at rest, plods, and raises both fists to slam. */
+function colossusBody(): { body: THREE.Group; clips: THREE.AnimationClip[] } {
+  const root = new THREE.Group(), rest: Xyz = [0, 2.6, 0], body = bone('body', root, ...rest);
+  const salt = new THREE.MeshStandardMaterial({ color: '#e6e1dc', roughness: 0.6, flatShading: true }), crust = new THREE.MeshStandardMaterial({ color: '#b8aaa0', roughness: 0.9, flatShading: true });
+  const glow = paint('#ffcf80', '#ff9a30'), crystal = new THREE.MeshStandardMaterial({ color: '#f4fbff', roughness: 0.2, metalness: 0.1, emissive: '#9fd8ff', emissiveIntensity: 0.25, flatShading: true });
+  const chest = mesh(body, new THREE.DodecahedronGeometry(1.5, 0), salt); chest.scale.set(1.25, 1.05, 0.9);
+  const seam = mesh(body, new THREE.BoxGeometry(0.16, 1.6, 0.1), glow, 0.1, 0.1, 1.2); seam.rotation.z = 0.25;
+  const seam2 = mesh(body, new THREE.BoxGeometry(0.12, 0.9, 0.1), glow, -0.5, -0.3, 1.15); seam2.rotation.z = -0.5;
+  const belly = mesh(body, new THREE.DodecahedronGeometry(1.0, 0), crust, 0, -1.4, 0.1); belly.scale.set(1.2, 0.8, 0.9);
+  for (const s of [-1, 1]) {
+    mesh(body, new THREE.DodecahedronGeometry(0.7, 0), crust, s * 0.7, -2.1, 0).scale.set(0.8, 1.2, 0.8);
+    for (let k = 0; k < 3; k++) { const spike = mesh(body, new THREE.ConeGeometry(0.22, 1.2 - k * 0.2, 5), crystal, s * (1.5 + k * 0.15), 1.2 + k * 0.25, -0.3 + k * 0.3); spike.rotation.z = -s * (0.5 + k * 0.15); }
+  }
+  const head = bone('head', body, 0, 1.75, 0.35);
+  mesh(head, new THREE.DodecahedronGeometry(0.5, 0), salt).scale.set(1, 0.85, 0.95);
+  for (const s of [-1, 1]) mesh(head, new THREE.SphereGeometry(0.09, 8, 6), glow, s * 0.2, 0.05, 0.42);
+  const armL = bone('armL', body, -2.0, 0.6, 0.2), armR = bone('armR', body, 2.0, 0.6, 0.2);
+  for (const [arm, s] of [[armL, -1], [armR, 1]] as const) {
+    const upper = mesh(arm, new THREE.CapsuleGeometry(0.42, 1.2, 4, 8), crust, s * 0.15, -0.8, 0); upper.rotation.z = s * 0.15;
+    const fist = mesh(arm, new THREE.DodecahedronGeometry(0.75, 0), salt, s * 0.3, -2.0, 0.3); fist.scale.set(1, 0.9, 1.1);
+  }
+  const restL: Xyz = [-2.0, 0.6, 0.2], restR: Xyz = [2.0, 0.6, 0.2];
+  return { body: root, clips: [
+    shift('idle', 'body', rest, [[0, 0, 0], [0, 0.08, 0], [0, 0, 0]], 2.2),
+    shifts('walk', [['body', rest, [[0, 0, 0], [0.12, 0.12, 0], [0, 0, 0], [-0.12, 0.12, 0], [0, 0, 0]]]], 1.4),
+    shifts('attack', [
+      ['body', rest, [[0, 0, 0], [0, 0.3, -0.3], [0, -0.4, 0.5], [0, 0, 0]]],
+      ['armL', restL, [[0, 0, 0], [0.4, 2.4, -0.4], [0.3, -0.6, 1.4], [0, 0, 0]]],
+      ['armR', restR, [[0, 0, 0], [-0.4, 2.4, -0.4], [-0.3, -0.6, 1.4], [0, 0, 0]]],
+    ], 1.6),
+    shifts('hit', [['body', rest, [[0, 0, 0], [0, 0.1, -0.35], [0, 0, 0]]]], 0.5),
+    shifts('die', [['body', rest, [[0, 0, 0], [0, -1.6, 0.4]]], ['armL', restL, [[0, 0, 0], [0, -0.8, 0.6]]], ['armR', restR, [[0, 0, 0], [0, -0.8, 0.6]]]], 1.6),
+  ] };
+}
+
 const LOOPS = ['idle', 'walk'];
 const PBR = { family: 'pbr', vertexColours: false } as const;
 
-/** Place a body at (x, z) on the ground, its +z turned by `yaw`. */
-export function spot(world: ShardWorld, x: number, z: number, yaw = 0): THREE.Object3D {
-  const o = new THREE.Object3D(); o.position.set(x, groundHeight(x, z), z); o.rotation.y = yaw; world.scene.add(o); return o;
+/** Place a body at (x, z) on the ground (or `lift` metres over it), its +z turned by `yaw`. */
+export function spot(world: ShardWorld, x: number, z: number, yaw = 0, lift = 0): THREE.Object3D {
+  const o = new THREE.Object3D(); o.position.set(x, groundHeight(x, z) + lift, z); o.rotation.y = yaw; world.scene.add(o); return o;
 }
 
 /** The salt skaters' species. */
@@ -210,5 +299,32 @@ export function dustHounds(world: ShardWorld): void {
       dims: { bodyY: 0.62, bodyHalfLen: 0.55, bodyRadius: 0.25, headRadius: 0.15, legLen: 0.62, feet: [], halfWidth: 0.3 },
       variants: [variant('dust', 'Dust hound', 30)], temperament: temper('wrecks.hound-pursuit', 32), senses: { notice: 16 } },
     strikes: [STRIKES.houndBite], size: 'medium', clips: hound.clips, loops: LOOPS, material: PBR,
+  });
+}
+
+/** MSZ30: the canyon's glass wisps, the rim's mesa vultures (both fly) and the Salt Colossus (MSZ36 gives it its fight). */
+export function canyonCreatures(world: ShardWorld): void {
+  const wisp = glassWispBody();
+  world.creature('canyon.wisp', wisp.body, {
+    species: { kind: 'glassWisp', label: 'Glass wisp', aggressive: true, lockable: true,
+      dims: { bodyY: 0.6, bodyHalfLen: 0.3, bodyRadius: 0.42, headRadius: 0.2, legLen: 0.6, feet: [], halfWidth: 0.42 },
+      variants: [variant('glass', 'Glass wisp', 30)], temperament: temper('canyon.wisp-dive', 30), senses: { notice: 18 },
+      flight: { above: 'ground', altitude: 5, climbRate: 5, diveRate: 14, lockRange: 25 } } as never,
+    strikes: [STRIKES.wispDive], size: 'medium', clips: wisp.clips, loops: LOOPS, material: PBR,
+  });
+  const vulture = vultureBody();
+  world.creature('rim.vulture', vulture.body, {
+    species: { kind: 'mesaVulture', label: 'Mesa vulture', aggressive: true, lockable: true,
+      dims: { bodyY: 0.6, bodyHalfLen: 0.5, bodyRadius: 0.3, headRadius: 0.12, legLen: 0.6, feet: [], halfWidth: 1.9 },
+      variants: [variant('mesa', 'Mesa vulture', 35)], temperament: temper('rim.vulture-stoop', 40), senses: { notice: 22 },
+      flight: { above: 'ground', altitude: 26, climbRate: 6, diveRate: 15, lockRange: 30 } } as never,
+    strikes: [STRIKES.vultureStoop], size: 'medium', clips: vulture.clips, loops: LOOPS, material: PBR,
+  });
+  const colossus = colossusBody();
+  world.creature('canyon.colossus', colossus.body, {
+    species: { kind: 'saltColossus', label: 'The Salt Colossus', aggressive: true, lockable: true,
+      dims: { bodyY: 2.6, bodyHalfLen: 1.4, bodyRadius: 2.0, headRadius: 0.5, legLen: 2.6, feet: [], halfWidth: 2.8 },
+      variants: [variant('colossus', 'The Salt Colossus', 1600, { rarity: 'rare', weight: 0 })], temperament: BRAINLESS, senses: { notice: 12 } } as never,
+    strikes: [STRIKES.colossusSlam], size: 'medium', clips: colossus.clips, loops: LOOPS, material: PBR, attackSpan: 1.6,
   });
 }
