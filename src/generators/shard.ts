@@ -1,6 +1,6 @@
 import { defineShard } from '@wildshard/sdk/scene/shard';
 import identity from '../identity.json' with { type: 'json' };
-import { buildCanyon, CANYON_DECISIONS, canyonRows } from './canyon.ts';
+import { buildCanyon, CANYON_DECISIONS, canyonRows, COLOSSUS_MOVES, colossusSpots } from './canyon.ts';
 import { buildCourseMarks } from './courseMarks.ts';
 import { courseRows } from './courses.ts';
 import { CUP_DIALOGUE, CUP_QUESTS, CUP_REPLACES, CUP_TALKS } from './cup.ts';
@@ -40,4 +40,6 @@ export const shard = defineShard(identity, (world) => {
     targets: { ...data.targets, talks: [...data.targets.talks ?? [], ...YARD_TALKS, ...PANS_TALKS, ...WRECK_TALKS, ...CUP_TALKS] },
   })),
   decisions: [...PANS_DECISIONS, ...CANYON_DECISIONS],
+  // MSZ36: the Colossus's chase leaps and stands
+  moves: COLOSSUS_MOVES, spots: colossusSpots(),
 });

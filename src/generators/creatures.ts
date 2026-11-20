@@ -24,6 +24,9 @@ export const STRIKES = {
   wispDive: strike('canyon.wisp.dive', 'glassWisp', { shape: { kind: 'sphere', radius: 1.6 }, windup: 1, active: 1, recover: 0.6, cooldown: 5, range: 12, damage: 7, weight: 1, speed: 0 } as Omit<Strike, 'id' | 'tags'>),
   vultureStoop: strike('rim.vulture.stoop', 'mesaVulture', { shape: { kind: 'sphere', radius: 1.6 }, windup: 1, active: 1, recover: 0.8, cooldown: 7, range: 14, damage: 6, weight: 1, speed: 0 } as Omit<Strike, 'id' | 'tags'>),
   colossusSlam: strike('canyon.colossus.slam', 'saltColossus', { shape: { kind: 'point', radius: 3 }, windup: 1.3, active: 0.25, recover: 0.8, cooldown: 0.5, range: 6, damage: 18, weight: 3, speed: 0 } as Omit<Strike, 'id' | 'tags'>),
+  // MSZ36: the Colossus's sweep (both fists round in front of it) and its brine spray (a burst all round it)
+  colossusSweep: strike('canyon.colossus.sweep', 'saltColossus', { shape: { kind: 'arc', radius: 6.5, halfAngle: 1.4 }, windup: 1.1, active: 0.3, recover: 0.8, cooldown: 0.5, range: 6.5, damage: 14, weight: 3, speed: 0 } as Omit<Strike, 'id' | 'tags'>),
+  colossusSpray: strike('canyon.colossus.spray', 'saltColossus', { shape: { kind: 'arc', radius: 9, halfAngle: Math.PI }, windup: 1.2, active: 0.35, recover: 0.9, cooldown: 0.5, range: 9, damage: 10, weight: 2, speed: 0 } as Omit<Strike, 'id' | 'tags'>),
   kingSpray: strike('pans.king.spray', 'brineKing', { shape: { kind: 'arc', radius: 5, halfAngle: 0.9 }, windup: 1, active: 0.3, recover: 0.8, cooldown: 2, range: 6, damage: 9, weight: 1, speed: 0 } as Omit<Strike, 'id' | 'tags'>),
 } as const;
 
@@ -302,7 +305,7 @@ export function dustHounds(world: ShardWorld): void {
   });
 }
 
-/** MSZ30: the canyon's glass wisps, the rim's mesa vultures (both fly) and the Salt Colossus (MSZ36 gives it its fight). */
+/** MSZ30: the canyon's glass wisps, the rim's mesa vultures (both fly) and the Salt Colossus (its fight: MSZ36, canyon.ts). */
 export function canyonCreatures(world: ShardWorld): void {
   const wisp = glassWispBody();
   world.creature('canyon.wisp', wisp.body, {
@@ -325,6 +328,6 @@ export function canyonCreatures(world: ShardWorld): void {
     species: { kind: 'saltColossus', label: 'The Salt Colossus', aggressive: true, lockable: true,
       dims: { bodyY: 2.6, bodyHalfLen: 1.4, bodyRadius: 2.0, headRadius: 0.5, legLen: 2.6, feet: [], halfWidth: 2.8 },
       variants: [variant('colossus', 'The Salt Colossus', 1600, { rarity: 'rare', weight: 0 })], temperament: BRAINLESS, senses: { notice: 12 } } as never,
-    strikes: [STRIKES.colossusSlam], size: 'medium', clips: colossus.clips, loops: LOOPS, material: PBR, attackSpan: 1.6,
+    strikes: [STRIKES.colossusSlam, STRIKES.colossusSweep, STRIKES.colossusSpray], size: 'medium', clips: colossus.clips, loops: LOOPS, material: PBR, attackSpan: 1.6,
   });
 }

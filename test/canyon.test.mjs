@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { groundHeight, roadAt } from '../src/generators/ground.ts';
 import { PLACES, regionAt, ROADS } from '../src/generators/layout.ts';
-import { ARENA } from '../src/generators/hollow.ts';
+import { ARENA, COLOSSUS_STANDS } from '../src/generators/hollow.ts';
 
 test('the arena\'s mouth opens on the canyon road and its gate spans the road', () => {
   const mouth = { x: ARENA.x + Math.sin(ARENA.mouth) * ARENA.ring, z: ARENA.z + Math.cos(ARENA.mouth) * ARENA.ring };
@@ -28,4 +28,21 @@ test('twelve places, each in its own region, none overlapping another', () => {
   assert.equal(new Set(PLACES.map((p) => p.id)).size, 12);
   for (const p of PLACES) if (p.region !== 'rim') assert.equal(regionAt(p.at.x, p.at.z), p.region, p.id);
   for (const [i, a] of PLACES.entries()) for (const b of PLACES.slice(i + 1)) assert.ok(Math.hypot(a.at.x - b.at.x, a.at.z - b.at.z) > a.radius + b.radius, `${a.id} and ${b.id} overlap`);
+});
+
+// MSZ36: the chase. At 30% the Colossus leaps from the hollow down the canyon road to the Glass Gorge: every stand it lands
+// on is on the road (a vehicle can follow it there), each leap is one the move rows can make (under 40 m), and the script's
+// `gorgeX` line tells the hollow from the gorge.
+test('the Colossus\'s chase lands on the canyon road, leap by leap, and ends in the gorge', () => {
+  const S = COLOSSUS_STANDS, legs = [S.hollow, S.chase1, S.chase2, S.gorge];
+  for (const stand of legs.slice(1)) {
+    const road = roadAt(stand.x, stand.z);
+    assert.ok(road !== null && road.weight > 0.5, `stand ${stand.x},${stand.z} is off the road`);
+    assert.equal(regionAt(stand.x, stand.z), 'canyon');
+  }
+  legs.slice(1).forEach((b, i) => { const a = legs[i] ?? b; assert.ok(Math.hypot(b.x - a.x, b.z - a.z) < 40); });
+  assert.ok(COLOSSUS_STANDS.hollow.x > COLOSSUS_STANDS.gorgeX && COLOSSUS_STANDS.gorge.x < COLOSSUS_STANDS.gorgeX);
+  const gorge = PLACES.find((p) => p.id === 'glass-gorge');
+  assert.ok(gorge !== undefined);
+  assert.ok(Math.hypot(gorge.at.x - COLOSSUS_STANDS.gorge.x, gorge.at.z - COLOSSUS_STANDS.gorge.z) < gorge.radius);
 });

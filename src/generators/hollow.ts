@@ -23,3 +23,11 @@ export const ARENA = {
 } as const;
 /** The arena's one shared field (the gate shut) and the panel it shows (the bars, solid). */
 export const ARENA_FIELDS = { gate: { id: 131, name: 'mirror.arena-gate' } } as const;
+/** MSZ36: the fight's other shared fields: which blow is told (`tell`: 1 the slam, 2 the sweep, 3 the brine spray, each
+ *  plus 3 in the gorge) and the open core (`core`: 1 in the hollow, 2 in the gorge). Each value is one panel. */
+export const COLOSSUS_FIELDS = { tell: { id: 132, name: 'mirror.colossus-tell' }, core: { id: 133, name: 'mirror.colossus-core' } } as const;
+/** MSZ36: where the Colossus stands: the hollow's middle, then (at 30%) it bounds down the canyon road in three leaps and
+ *  turns at bay in the Glass Gorge, on the road by the gorge's middle. West of `gorgeX` it is in the gorge. */
+export const COLOSSUS_STANDS = {
+  hollow: { x: HOLLOW.x, z: HOLLOW.z }, chase1: { x: 80, z: -184 }, chase2: { x: 62, z: -163.5 }, gorge: { x: 46, z: -149 }, gorgeX: 70,
+} as const;
