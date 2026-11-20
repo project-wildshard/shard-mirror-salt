@@ -27,7 +27,7 @@ export const RACE = {
   triggers,
   dialogue: [],
   quests: [{
-    id: 'mirror.race', title: 'Run the arches', track: true, completeFlag: 'mirror.race',
+    id: 'mirror.race', title: 'Run the arches', track: false, completeFlag: 'mirror.race',
     intro: { objective: 'Run the arch line toward the sun: start at the GO line', chip: 'Race' },
     steps,
     onComplete: { fact: 'mirror.race', coins: 20 },

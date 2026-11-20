@@ -18,6 +18,7 @@ import { ARENA, ARENA_FIELDS, PLACES_AT } from './hollow.ts';
 import { canyonCreatures, spot, STRIKES } from './creatures.ts';
 import { placeTriggers } from './mirror.ts';
 import { stream, type Materials } from './world';
+import { CAMPS } from './camps';
 
 const GORGE = PLACES_AT.gorge, LOOKOUT = PLACES_AT.lookout;
 const canyonRoad = ROADS.find((r) => r.id === 'canyon-road')?.line ?? [];
@@ -159,8 +160,8 @@ export function buildCanyon(world: ShardWorld, M: Materials): { places: string[]
   canyonCreatures(world);
   // the Colossus faces the mouth, where a challenger comes in
   world.spawnAt(COLOSSUS, spot(world, ARENA.x, ARENA.z, ARENA.mouth), { species: 'canyon.colossus', variant: 'colossus', brain: null, strike: STRIKES.colossusSlam.id, seed: 3051, scale: 1, respawn: 180 });
-  for (let i = 0; i < 3; i++) world.spawnAt(`glass-wisp-${String(i + 1)}`, spot(world, GORGE.x + Math.sin(i * 2.1) * 6, GORGE.z + Math.cos(i * 2.1) * 6, 0, 5), { species: 'canyon.wisp', variant: 'glass', brain: 'canyon.wisp-dive', strike: null, seed: 3011 + i, scale: 1, respawn: 60 });
-  for (let i = 0; i < 3; i++) world.spawnAt(`mesa-vulture-${String(i + 1)}`, spot(world, 150 + Math.sin(i * 2.1) * 18, -120 + Math.cos(i * 2.1) * 18, 0, 26), { species: 'rim.vulture', variant: 'mesa', brain: 'rim.vulture-stoop', strike: null, seed: 3021 + i, scale: 1, respawn: 90 });
+  for (let i = 0; i < CAMPS.wisps.count; i++) world.spawnAt(`${CAMPS.wisps.id}-${String(i + 1)}`, spot(world, GORGE.x + Math.sin(i * 2.1) * 6, GORGE.z + Math.cos(i * 2.1) * 6, 0, 5), { species: 'canyon.wisp', variant: 'glass', brain: 'canyon.wisp-dive', strike: null, seed: 3011 + i, scale: 1, respawn: 60 });
+  for (let i = 0; i < CAMPS.vultures.count; i++) world.spawnAt(`${CAMPS.vultures.id}-${String(i + 1)}`, spot(world, 150 + Math.sin(i * 2.1) * 18, -120 + Math.cos(i * 2.1) * 18, 0, 26), { species: 'rim.vulture', variant: 'mesa', brain: 'rim.vulture-stoop', strike: null, seed: 3021 + i, scale: 1, respawn: 90 });
   return { places: (['yard', 'arches', 'canyon', 'rim'] as const).flatMap((region) => placeTriggers(world, region)) };
 }
 

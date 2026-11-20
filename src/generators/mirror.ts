@@ -9,6 +9,7 @@ import { groundHeight } from './ground.ts';
 import { PLACES, type RegionId } from './layout.ts';
 import { camp, saltSkaters, STRIKES } from './creatures.ts';
 import { landSail, type Materials } from './world';
+import { CAMPS } from './camps';
 
 const place = (id: string): { x: number; z: number; radius: number } => {
   const p = PLACES.find((q) => q.id === id);
@@ -52,6 +53,6 @@ function sunkenSail(part: THREE.Group, M: Materials): void {
 export function buildMirror(world: ShardWorld, M: Materials): { skaters: string[]; places: string[] } {
   world.part('sunken-sail', (part) => { sunkenSail(part, M); });
   saltSkaters(world);
-  const skaters = camp(world, 'salt-skater', MIRROR.DEEP, { species: 'salt.skater', variant: 'pale', brain: 'mirror.skater-pursuit', strike: STRIKES.skaterNip.id, count: 7, radius: 22, seed: 2701 });
+  const skaters = camp(world, CAMPS.skaters.id, MIRROR.DEEP, { species: 'salt.skater', variant: 'pale', brain: 'mirror.skater-pursuit', strike: STRIKES.skaterNip.id, count: CAMPS.skaters.count, radius: 22, seed: 2701 });
   return { skaters, places: placeTriggers(world, 'mirror') };
 }

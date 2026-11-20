@@ -16,6 +16,7 @@ import { BERM, PAN_CELLS, PANS, type Stage } from './panGrid.ts';
 import { brineCrabs, camp, spot, STRIKES } from './creatures.ts';
 import { placeTriggers } from './mirror.ts';
 import type { Materials } from './world';
+import { CAMPS } from './camps';
 
 export const KING = 'brine-king';
 export const PANS_FLAGS = { brinewifeMet: 'mirror.brinewife.met' } as const;
@@ -315,7 +316,7 @@ export function buildPans(world: ShardWorld, M: Materials): { crabs: string[]; p
   kingFroth(world);
   sluice(world);
   brineCrabs(world);
-  const crabs = camp(world, 'brine-crab', PANS.CAMP, { species: 'pans.crab', variant: 'brine', brain: 'pans.crab-pursuit', strike: STRIKES.crabPinch.id, count: 6, radius: 12, seed: 2801 });
+  const crabs = camp(world, CAMPS.crabs.id, PANS.CAMP, { species: 'pans.crab', variant: 'brine', brain: 'pans.crab-pursuit', strike: STRIKES.crabPinch.id, count: CAMPS.crabs.count, radius: 12, seed: 2801 });
   // the King faces +z, up the grid toward the pan road, where a challenger comes from
   world.spawnAt(KING, spot(world, PANS.KING.x, PANS.KING.z, 0), { species: 'pans.king', variant: 'king', brain: null, strike: STRIKES.kingCrush.id, seed: 2851, scale: 1, respawn: 120 });
   return { crabs, places: placeTriggers(world, 'pans') };

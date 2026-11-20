@@ -11,6 +11,7 @@ import { camp, dustHounds, STRIKES } from './creatures.ts';
 import { placeTriggers } from './mirror.ts';
 import { DEN, FINDS, SCRAPPER, WRECKS, type Wreck } from './wreckField.ts';
 import type { Materials } from './world';
+import { CAMPS } from './camps';
 
 export const WRECK_FLAGS = { scrapperMet: 'mirror.scrapper.met' } as const;
 /** A find's flag: `mirror.find.wreck.<id>`. */
@@ -159,6 +160,6 @@ export function buildWrecks(world: ShardWorld, M: Materials): { hounds: string[]
   let found: string[] = [];
   world.part('wreck-finds', (part) => { found = finds(world, part); });
   dustHounds(world);
-  const hounds = camp(world, 'dust-hound', DEN, { species: 'wrecks.hound', variant: 'dust', brain: 'wrecks.hound-pursuit', strike: STRIKES.houndBite.id, count: 5, radius: DEN.radius, seed: 2901 });
+  const hounds = camp(world, CAMPS.hounds.id, DEN, { species: 'wrecks.hound', variant: 'dust', brain: 'wrecks.hound-pursuit', strike: STRIKES.houndBite.id, count: CAMPS.hounds.count, radius: DEN.radius, seed: 2901 });
   return { hounds, finds: found, places: placeTriggers(world, 'wrecks') };
 }
