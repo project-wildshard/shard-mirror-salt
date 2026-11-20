@@ -3,7 +3,6 @@
 // skaters' camp skims its middle; a land-sail that never finished lies half sunk by the shore road, its chest beside it
 // (MSZ38 fills the chest). Each of the region's places is a region trigger.
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { solid, type ShardWorld } from '@wildshard/sdk/scene/author';
 import { groundHeight } from './ground.ts';
 import { PLACES, type RegionId } from './layout.ts';
@@ -39,13 +38,6 @@ function sunkenSail(part: THREE.Group, M: Materials): void {
   wreck.position.set(x, -0.35, z); wreck.rotation.set(0.15, 0.9, 1.05); wreck.scale.setScalar(1.8); part.add(wreck); // MSZ40: reads across the Mirror
   const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 3.2, 8), M.wood); mast.position.set(x + 2.6, 0.2, z - 1.5); mast.rotation.set(0.1, 0.3, 1.45); part.add(mast);
   const hull = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.0, 3.8), M.wood); hull.position.set(x, 0.3, z); hull.rotation.y = 0.9; hull.visible = false; part.add(solid(hull));
-  const cx = x - 2.2, cz = z + 1.6;
-  const chest = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.55, 0.6), M.wood); chest.position.set(cx, 0.27, cz); chest.rotation.y = 0.4; part.add(solid(chest));
-  const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.9, 10, 1, false, 0, Math.PI), M.wood); lid.rotation.set(0, 0.4, Math.PI / 2); lid.position.set(cx, 0.55, cz); part.add(lid);
-  const bands: THREE.BufferGeometry[] = [];
-  for (const o of [-0.3, 0.3]) bands.push(new THREE.BoxGeometry(0.06, 0.62, 0.64).translate(o, 0, 0).rotateY(0.4).translate(cx, 0.3, cz).toNonIndexed());
-  for (const g of bands) g.deleteAttribute('uv');
-  part.add(new THREE.Mesh(mergeGeometries(bands), M.post));
   part.traverse((o) => { if (o instanceof THREE.Mesh) o.castShadow = true; });
 }
 

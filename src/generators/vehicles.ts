@@ -7,6 +7,7 @@
 import * as THREE from 'three';
 import { solid, type ShardWorld } from '@wildshard/sdk/scene/author';
 import { paintCanvas } from '@wildshard/sdk/scene/canvas';
+import { PENNANT_REWARD, REWARD_DOCK, REWARD_KIND } from './finds.ts';
 import { DOCKS, GATES, type DockSpot } from './layout.ts';
 import { landSail, WIND, type Materials } from './world';
 import { BUGGY_SOUNDS, SAIL_SOUNDS } from './audio.ts';
@@ -67,6 +68,12 @@ export function buildVehicles(world: ShardWorld, M: Materials): void {
   world.vehicle('salt.land-sail', sailKind(M, M.sailTeal), sail);
   world.vehicle('salt.land-sail-red', sailKind(M, M.sailRed), sail);
   world.vehicle('salt.land-sail-gold', sailKind(M, M.sailGold), sail);
+  const ivory = M.sailTeal.clone();
+  ivory.color.set('#fff2d0');
+  world.vehicle(REWARD_KIND, sailKind(M, ivory), {
+    ...sail, labels: { ...sail.labels, drive: 'Board the ivory land-sail' },
+  });
+  world.dock(REWARD_DOCK, spot(world, -39, 154, 0), { kind: REWARD_KIND, requiresFlag: PENNANT_REWARD, respawn: 20 });
   world.vehicle('salt.buggy', buggy(M), { speed: 22, reverse: 6, accel: 9, brake: 18, turn: 1.6, grip: 0.8, drift: 0.4, boost: 1.5, mass: 600,
     labels: { drive: 'Drive the buggy', ride: 'Ride in the buggy', leave: 'Get out' }, sounds: BUGGY_SOUNDS });
   const g0 = GATES[0], g3 = GATES[3], g5 = GATES[5];

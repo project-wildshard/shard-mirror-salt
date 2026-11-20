@@ -54,12 +54,12 @@ export const YARD_TALKS = [
 ];
 
 /** A painted board: `rows` of text under a title on the gate boards' dark plate with an amber rim. */
-function boardMaterial(title: string, rows: readonly string[], w = 512, h = 384): THREE.MeshStandardMaterial {
+export function boardMaterial(title: string, rows: readonly string[], w = 512, h = 384): THREE.MeshStandardMaterial {
   const map = paintCanvas(w, h, (g) => {
     g.fillStyle = '#ffb54a'; g.fillRect(0, 0, w, h);
     g.fillStyle = '#2a1e2a'; g.fillRect(8, 8, w - 16, h - 16);
     g.fillStyle = '#ffb54a'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = `bold ${String(Math.round(h / 8))}px sans-serif`;
-    g.fillText(title, w / 2, h / 7);
+    g.fillText(title, w / 2, rows.length === 0 ? h / 2 : h / 7, w - 32);
     g.fillStyle = '#fff2d0'; g.textAlign = 'left'; g.font = `${String(Math.round(h / 14))}px sans-serif`;
     rows.forEach((row, i) => { g.fillText(row, 28, h / 7 + (h * 0.8 * (i + 1)) / (rows.length + 1)); });
   });

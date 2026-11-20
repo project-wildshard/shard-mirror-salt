@@ -6,6 +6,7 @@ import { courseRows } from './courses.ts';
 import { CUP_DIALOGUE, CUP_QUESTS, CUP_REPLACES, CUP_TALKS } from './cup.ts';
 import { buildCupLandings } from './cupLandings.ts';
 import { BRAINS } from './creatures.ts';
+import { buildFinds, FIND_LEDGER, FIND_QUESTS, FIND_TALKS } from './finds.ts';
 import { buildMirror } from './mirror.ts';
 import { BRINEWIFE_DIALOGUE, buildPans, PANS_DECISIONS, PANS_FLAGS, PANS_TALKS, pansRows } from './pans.ts';
 import { RACE } from './race';
@@ -30,14 +31,16 @@ export const shard = defineShard(identity, (world) => {
   buildCanyon(world, materials);
   buildCourseMarks(world, materials);
   buildCupLandings(world);
+  buildFinds(world, materials);
 }, {
   extend: (data) => canyonRows(pansRows({
     ...data,
-    quests: { ...RACE, quests: [...RACE.quests, ...CUP_QUESTS.quests], races: COURSE.races, triggers: [...RACE.triggers, ...COURSE.triggers, ...CUP_QUESTS.triggers], flags: [...RACE.flags, ...COURSE.flags, ...Object.values(YARD_FLAGS), ...Object.values(PANS_FLAGS), ...Object.values(WRECK_FLAGS), ...CUP_QUESTS.flags],
+    quests: { ...RACE, quests: [...RACE.quests, ...CUP_QUESTS.quests, ...FIND_QUESTS.quests], races: COURSE.races, triggers: [...RACE.triggers, ...COURSE.triggers, ...CUP_QUESTS.triggers, ...FIND_QUESTS.triggers], flags: [...RACE.flags, ...COURSE.flags, ...Object.values(YARD_FLAGS), ...Object.values(PANS_FLAGS), ...Object.values(WRECK_FLAGS), ...CUP_QUESTS.flags, ...FIND_QUESTS.flags],
       // MSZ34, MSZ35: the Cup's talks replace the Marshal's, the Scrapper's and the Brinewife's region trees with the chain's answers added
-      dialogue: [...RACE.dialogue, ...[...YARD_DIALOGUE, BRINEWIFE_DIALOGUE, SCRAPPER_DIALOGUE].filter((d) => !CUP_REPLACES.has(d.id)), ...CUP_DIALOGUE] },
+      dialogue: [...RACE.dialogue, ...[...YARD_DIALOGUE, BRINEWIFE_DIALOGUE, SCRAPPER_DIALOGUE].filter((d) => !CUP_REPLACES.has(d.id)), ...CUP_DIALOGUE, ...FIND_QUESTS.dialogue] },
+    ledger: [...data.ledger, ...FIND_LEDGER],
     creatures: { ...data.creatures, brains: [...data.creatures.brains, ...BRAINS] } as typeof data.creatures,
-    targets: { ...data.targets, talks: [...data.targets.talks ?? [], ...YARD_TALKS, ...PANS_TALKS, ...WRECK_TALKS, ...CUP_TALKS] },
+    targets: { ...data.targets, talks: [...data.targets.talks ?? [], ...YARD_TALKS, ...PANS_TALKS, ...WRECK_TALKS, ...CUP_TALKS, ...FIND_TALKS] },
   })),
   decisions: [...PANS_DECISIONS, ...CANYON_DECISIONS],
   // MSZ36: the Colossus's chase leaps and stands
