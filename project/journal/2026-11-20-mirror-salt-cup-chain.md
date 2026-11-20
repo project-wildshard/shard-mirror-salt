@@ -14,6 +14,14 @@ Marshal. The legacy arches quest keeps its fact for the existing proof.
 Each Cup step has MZ31 feedback at the place where it is earned. The
 completion payoff runs on the Colossus defeat flag.
 
+The native tape in `test/proof/salt-cup.mjs` reads the cooked shard and
+the matching engine's Rapier binary. Run it with the engine's
+`scripts/sim-node-loader.mjs` preloaded and `--experimental-transform-types`.
+Pass the cooked folder, `rapier.wasm` and a path for the JSON report.
+The tape places the buggy at the checkpoints in order, takes each NPC
+answer through native interaction, and verifies the reward after a
+test-only Colossus defeat flag.
+
 The race steps read each race's `<race>.beat` flag: a finish files only a fact, and the beat flag is the one thing a race
 raises. The crab step latches on a region trigger at the camp (`mirror.cup.crabs.cleared`, when every crab's `dead:` flag
 holds) because a crab comes back a minute after it falls and takes its `dead:` flag with it; the Brinewife's answer reads
