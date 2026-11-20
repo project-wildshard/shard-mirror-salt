@@ -9,6 +9,7 @@ import { animate, drift, solid, sway, Water, type ShardWorld } from '@wildshard/
 import { paintCanvas } from '@wildshard/sdk/scene/canvas';
 import { fbm, groundHeight, mirrorDeep, roadAt, smooth } from './ground.ts';
 import { FLOOD_RADIUS, GATES, ROADS, SPAWN } from './layout.ts';
+import { buildSaltAudio } from './audio.ts';
 import { duskSky, SUN_DIRECTION } from './sky';
 
 /** Seeded randomness: each section owns its stream, so editing one never moves another. */
@@ -213,6 +214,7 @@ export function dusk(world: ShardWorld): void {
 export function buildMirrorSalt(world: ShardWorld): Materials {
   const M = materials();
   dusk(world);
+  buildSaltAudio(world);
   world.ground(groundHeight, { colourAt: groundColour, material: new THREE.MeshStandardMaterial({ roughness: 0.95 }) });
   world.vehicleSurface({
     base: 0.8,
