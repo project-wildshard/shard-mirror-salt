@@ -1,7 +1,7 @@
 // MIRROR-SALT-ZONE MSZ26 (meta): the Start Yard. The Marshal's tent and the Marshal, who licenses racers; the board of the
 // Salt Cup's four races beside it; the stands along the GO line; the garage sign over the yard's docks; the Salt Cup banner
 // across the GO line. The Marshal's talk and the board's reading are `targets.talks` (shard.ts adds them with `YARD_TALKS`
-// and `YARD_DIALOGUE`). The board names the races; their best times need an engine board (MSZ26b, after MSZ32 declares them).
+// and `YARD_DIALOGUE`). The board reads the player's best for each of the four Cup races (MSZ26b).
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { animate, solid, sway, type ShardWorld } from '@wildshard/sdk/scene/author';
@@ -38,18 +38,19 @@ export const MARSHAL_DIALOGUE = {
     { id: 'docks', lines: ['Every road into the flat has a dock at its mouth, and the yard has three by my tent.', 'Take a buggy if you like a motor, a sail if you like the wind. Bring it back in one piece.'], choices: [] },
   ],
 };
-/** The board's reading: the four races and where they run. */
+/** The board's reading: the player's best in each race, with its routes available below. */
 export const BOARD_DIALOGUE = {
-  id: 'mirror.board', name: 'The Salt Cup board', start: 'rows',
+  id: 'mirror.board', name: 'The Salt Cup board', start: 'times',
   nodes: [
-    { id: 'rows', lines: CUP_RACES.map((r) => `${r.name}: ${r.route}.`), choices: [{ id: 'times', label: 'Look for the best times.', next: 'times', sets: [YARD_FLAGS.boardRead] }] },
-    { id: 'times', lines: ['The times are chalked out. The Marshal fills them in once a race is run.'], choices: [] },
+    { id: 'rows', lines: CUP_RACES.map((race) => `${race.name}: ${race.route}.`), choices: [] },
+    { id: 'times', lines: CUP_RACES.map(race => `${race.name} · {{race:${race.id}.best}}`), sets: [YARD_FLAGS.boardRead],
+      choices: [{ id: 'routes', label: 'Read the routes.', next: 'rows' }] },
   ],
 };
 export const YARD_DIALOGUE = [MARSHAL_DIALOGUE, BOARD_DIALOGUE];
 export const YARD_TALKS = [
   { id: 'mirror.marshal.talk', at: at(YARD.MARSHAL), radius: 2.6, label: 'Talk to the Marshal', dialogue: MARSHAL_DIALOGUE.id, figure: 'salt.marshal' },
-  { id: 'mirror.board.read', at: at(YARD.BOARD), radius: 2.8, label: 'Read the Salt Cup board', dialogue: BOARD_DIALOGUE.id },
+  { id: 'mirror.board.read', at: at(YARD.BOARD), radius: 2.8, label: 'Read the Salt Cup board', dialogue: BOARD_DIALOGUE.id, figure: 'salt.board' },
 ];
 
 /** A painted board: `rows` of text under a title on the gate boards' dark plate with an amber rim. */
@@ -113,7 +114,7 @@ function marshal(figure: THREE.Group, M: Materials): void {
 /** The board of the Cup's races on two legs, facing the spawn. */
 function board(part: THREE.Group, M: Materials): void {
   const { x, z } = YARD.BOARD, y = groundHeight(x, z);
-  const face = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 2.7), boardMaterial('THE SALT CUP', CUP_RACES.map((r, i) => `${String(i + 1)}.  ${r.name}  ·  best  --:--`)));
+  const face = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 2.7), boardMaterial('THE SALT CUP', CUP_RACES.map(race => race.name)));
   face.position.set(x, y + 2.3, z - 0.06); face.rotation.y = Math.PI; part.add(face);
   const back = new THREE.Mesh(new THREE.BoxGeometry(3.8, 2.9, 0.1), M.wood); back.position.set(x, y + 2.3, z); part.add(back);
   for (const sx of [-1.6, 1.6]) { const leg = new THREE.Mesh(new THREE.BoxGeometry(0.14, 3.7, 0.14), M.wood); leg.position.set(x + sx, y + 1.85, z + 0.05); part.add(solid(leg)); }
@@ -150,8 +151,9 @@ function signs(part: THREE.Group, M: Materials): void {
   banner.position.set(g0.x, 6.7, g0.z); banner.rotation.y = g0.yaw; part.add(banner);
 }
 
-/** The Start Yard's parts; the Marshal's figure is the panel his talk names. */
+/** The Marshal and the board each lend their own panel to their talk. */
 export function buildYard(world: ShardWorld, M: Materials): void {
   const figure = world.part('marshal-figure', () => undefined, { panel: 'salt.marshal' });
-  world.part('yard', (part) => { tent(part, M); marshal(figure, M); board(part, M); stands(part, M); signs(part, M); });
+  world.part('salt-cup-board', part => { board(part, M); }, { panel: 'salt.board' });
+  world.part('yard', (part) => { tent(part, M); marshal(figure, M); stands(part, M); signs(part, M); });
 }
