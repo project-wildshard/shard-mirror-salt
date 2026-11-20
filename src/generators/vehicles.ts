@@ -6,7 +6,8 @@
 // are its hull. shard.ts runs it after world.ts's scene, with its materials.
 import * as THREE from 'three';
 import { solid, type ShardWorld } from '@wildshard/sdk/scene/author';
-import { GATES, landSail, SPAWN, WIND, type Materials } from './world';
+import { GATES, SPAWN } from './layout';
+import { landSail, WIND, type Materials } from './world';
 
 /** An empty node: where a rider sits or steps off. */
 function mark(name: string, x: number, y: number, z: number): THREE.Object3D {

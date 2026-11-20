@@ -2,7 +2,7 @@
 // it has (`when`), so the gates count in order; one quest step per gate, each with a marker on its gate. The run is timed
 // by `world.race` in `world.ts` (SS-MS1b). A land-sail that moves under the wind has no host in the format yet (meta
 // SHARD-SOURCE SS-MS2), so the race is run on foot.
-import { GATES } from './world';
+import { GATES } from './layout';
 
 const flag = (i: number): string => `mirror.gate.${String(i)}`;
 const LAST = GATES.length - 1;

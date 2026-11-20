@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { animate, drift, solid, sway, Water, type ShardWorld } from '@wildshard/sdk/scene/author';
 import { paintCanvas } from '@wildshard/sdk/scene/canvas';
+import { FLOOD_RADIUS, GATES, SPAWN } from './layout';
 import { duskSky, SUN_DIRECTION } from './sky';
 
 /** Seeded randomness: each section owns its stream, so editing one never moves another. */
@@ -25,14 +26,6 @@ export function fbm(x: number, z: number, oct = 4): number { let s = 0, a = 0.5,
 const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
 const smooth = (a: number, b: number, x: number): number => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
-/** The race runs from the start (+z) toward the low sun (-z). */
-export const SPAWN = { x: -14, z: 150, yaw: 0 };
-export interface Gate { readonly x: number; readonly z: number; readonly yaw: number; readonly width: number; readonly height: number }
-/** The race gates: gate 0 is the start line, gate 8 the finish; one arch over each of 1 to 8. */
-export const GATES: readonly Gate[] = Array.from({ length: 9 }, (_, i) => ({
-  x: Math.sin(i * 0.9) * 14, z: 140 - i * 30, yaw: Math.sin(i) * 0.35, width: 8 + (i % 3), height: 10 + (i % 4),
-}));
-export const FLOOD_RADIUS = 178;
 
 /** The ground: the salt flat at 0 m, a ring of mesas past 170 m, cut by four passes where the entry roads come in. */
 export function groundHeight(x: number, z: number): number {
