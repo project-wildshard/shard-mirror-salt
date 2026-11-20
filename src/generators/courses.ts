@@ -4,7 +4,8 @@
 // down the pan road and the east causeway between the brine pans. The Canyon Drop runs from the Sun Lookout down its spur,
 // west along the rim road past Colossus Hollow and down the canyon road to the arch line's end. Each checkpoint is a
 // region trigger that fires only once the one before it has; the line's stop fires only after the last.
-import { GATES, RIM_ROAD, type Spot } from './layout.ts';
+import { groundHeight } from './ground.ts';
+import { GATES, LOOKOUT_JOIN, RIM_ROAD, type Spot } from './layout.ts';
 
 export interface Course {
   /** The race's id, its fact, and the stem of its flags. */
@@ -37,6 +38,35 @@ export const COURSES: readonly Course[] = [
     checkpoints: [{ x: 188, z: -150 }, { x: 167.9, z: -117.6 }, rim(2.5), { x: 70, z: -170 }, { x: 35, z: -140 }] },
 ];
 
+/**
+ * MSZ33: Sorrel Vane, the Salt Cup's rival, three times the Cup's winner, in the red land-sail off the GO line. He races
+ * each of the four (the three heats, then the final down the Canyon Drop) along his own line: the arch line's gates, the rim
+ * road round once a lap, the slalom's gates, the lookout's spur and the canyon road. His speed per race is a little under a
+ * well driven buggy's, and his catch-up band keeps him close: idle on the line and he wins; drive the line and you can beat him.
+ */
+export const RIVAL = { name: 'Sorrel Vane', dock: 'line.red' } as const;
+/** The flag a finish ahead of him raises in each race (the quest line, MSZ34, reads them). */
+export const rivalBeat = (race: string): string => `${race}.beat`;
+type Point = [number, number, number];
+const on = (p: Spot): Point => [Math.round(p.x * 10) / 10 + 0, Math.round(groundHeight(p.x, p.z) * 10) / 10 + 0, Math.round(p.z * 10) / 10 + 0];
+const rimArc = (from: number, to: number, step: number): Spot[] => {
+  const out: Spot[] = [], dir = Math.sign(to - from);
+  for (let d = from; dir * (to - d) > 0; d += dir * step) out.push(rim((d * Math.PI) / 180));
+  return out;
+};
+const courseOf = (id: string): Course => { const c = COURSES.find((k) => k.id === id); if (c === undefined) throw new Error(id); return c; };
+/** Each race's rival line and his top speed on it (m/s; the red sail's own is 12, 19 boosted). */
+export function rivalLines(): Record<string, { readonly line: Point[]; readonly speed: number }> {
+  const slalom = courseOf('mirror.slalom'), canyon = courseOf('mirror.canyon');
+  return {
+    'mirror.arches': { line: GATES.map((g) => on(g)), speed: 10 },
+    // one lap of the rim road, clockwise from the south pass as the checkpoints run; the engine closes it on its first point
+    'mirror.rim': { line: rimArc(0, -360, 5).map(on), speed: 10 },
+    'mirror.slalom': { line: [slalom.start, ...slalom.checkpoints, slalom.stop].map(on), speed: 7 },
+    'mirror.canyon': { line: [canyon.start, { x: 188, z: -150 }, LOOKOUT_JOIN, ...rimArc(130, 145, 5), rim((145 * Math.PI) / 180), { x: 108, z: -175 }, { x: 95, z: -176 }, { x: 80, z: -172 }, { x: 70, z: -170 }, { x: 35, z: -140 }, canyon.stop].map(on), speed: 9 },
+  };
+}
+
 export const courseFlag = (course: Course, part: 'go' | 'end' | number): string =>
   `${course.id}.${typeof part === 'number' ? `cp.${String(part)}` : part}`;
 
@@ -45,9 +75,10 @@ export const courseFlag = (course: Course, part: 'go' | 'end' | number): string 
 /** A course's trigger row and its race row, as `quests.triggers` and `quests.races` read them (format 0.57.0). */
 export interface CourseTrigger { readonly id: string; readonly kind: 'region'; readonly flag: string; readonly x: number; readonly z: number; readonly radius: number; readonly when?: { readonly all: readonly string[] } }
 export interface CourseRace { readonly id: string; readonly start: string; readonly stop: string; readonly fact: string; readonly cap: number;
-  readonly resets?: readonly string[]; readonly laps?: number; readonly checkpoints?: readonly string[]; readonly ride: 'vehicle' }
+  readonly resets?: readonly string[]; readonly laps?: number; readonly checkpoints?: readonly string[]; readonly ride: 'vehicle';
+  readonly rival: { readonly name: string; readonly dock: string; readonly line: Point[]; readonly speed: number; readonly beat: string } }
 export function courseRows(): { flags: string[]; triggers: CourseTrigger[]; races: CourseRace[] } {
-  const flags: string[] = [], triggers: CourseTrigger[] = [], races: CourseRace[] = [];
+  const flags: string[] = [], triggers: CourseTrigger[] = [], races: Omit<CourseRace, 'rival'>[] = [];
   // Run the Arches (SS-MS1b): the GO line's flag to the finish arch's; a finish lowers arches 1 to 7 (SS-MS1c), so the next
   // run counts every arch again. The arches count in order by their triggers' own `when` (`race.ts`).
   const arch = (i: number): string => `mirror.gate.${String(i)}`;
@@ -62,5 +93,14 @@ export function courseRows(): { flags: string[]; triggers: CourseTrigger[]; race
     triggers.push({ id: end, kind: 'region', flag: end, ...at(c.stop), radius: c.radius, when: { all: [cps.at(-1) ?? go] } });
     races.push({ id: c.id, start: go, stop: end, fact: c.id, cap: c.cap, laps: c.laps, checkpoints: cps, ride: 'vehicle' });
   }
-  return { flags, triggers, races };
+  // MSZ33: Sorrel Vane races each of them, and a finish ahead of him raises its beat flag
+  const lines = rivalLines();
+  const raced: CourseRace[] = [];
+  for (const r of races) {
+    const line = lines[r.id]; if (line === undefined) throw new Error(`No rival line for ${r.id}`);
+    const rival = { ...RIVAL, ...line, beat: rivalBeat(r.id) };
+    raced.push({ ...r, rival });
+  }
+  flags.push(...raced.map((r) => r.rival.beat));
+  return { flags, triggers, races: raced };
 }
