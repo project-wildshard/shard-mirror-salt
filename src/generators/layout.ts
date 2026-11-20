@@ -140,3 +140,29 @@ export const PLACES: readonly Place[] = [
   { id: 'sun-lookout', name: 'The Sun Lookout', region: 'rim', at: { x: 195, z: -185 }, radius: 12 },
   { id: 'west-pass', name: 'The West Pass', region: 'rim', at: { x: -210, z: 0 }, radius: 14 },
 ];
+
+/** MSZ25: where a dock stands (a vehicle's spot, heading `yaw`: it faces (-sin yaw, -cos yaw)), its shelter and sign beside
+ *  it, off the road, and what it hands out: each player's own buggy or land-sail. */
+export interface DockSpot {
+  readonly id: string;
+  readonly name: string;
+  readonly kind: 'buggy' | 'sail';
+  readonly at: Spot;
+  readonly yaw: number;
+  readonly shelter: Spot;
+}
+/** How far in from the cell's edge a gate road's dock stands, and how far off the road's centre line. */
+export const MOUTH_IN = 222;
+const OFF = 7, SHED = 10.8;
+/** Facing +z, just short of pi: the SDK rounds a dock's heading to 3 places and pi rounds past the format's bound. */
+const FACE_SOUTH = 3.141;
+/** A dock at each entry road's mouth (a player from any gate is a few steps from a buggy) and three in the Start Yard. */
+export const DOCKS: readonly DockSpot[] = [
+  { id: 'north.buggy', name: 'North Road', kind: 'buggy', at: { x: OFF, z: -MOUTH_IN }, yaw: FACE_SOUTH, shelter: { x: SHED, z: -MOUTH_IN } },
+  { id: 'east.buggy', name: 'East Road', kind: 'buggy', at: { x: MOUTH_IN, z: OFF }, yaw: Math.PI / 2, shelter: { x: MOUTH_IN, z: SHED } },
+  { id: 'south.buggy', name: 'South Road', kind: 'buggy', at: { x: -OFF, z: MOUTH_IN }, yaw: 0, shelter: { x: -SHED, z: MOUTH_IN } },
+  { id: 'west.buggy', name: 'West Road', kind: 'buggy', at: { x: -MOUTH_IN, z: -OFF }, yaw: -Math.PI / 2, shelter: { x: -MOUTH_IN, z: -SHED } },
+  { id: 'yard.buggy', name: 'Start Yard', kind: 'buggy', at: { x: SPAWN.x - 8, z: SPAWN.z + 4 }, yaw: 0, shelter: { x: SPAWN.x - 8, z: SPAWN.z + 8.5 } },
+  { id: 'yard.sail', name: 'Start Yard', kind: 'sail', at: { x: SPAWN.x - 18, z: SPAWN.z + 6 }, yaw: 0, shelter: { x: SPAWN.x - 18, z: SPAWN.z + 11.5 } },
+  { id: 'yard.buggy.east', name: 'Start Yard', kind: 'buggy', at: { x: 24, z: 156 }, yaw: 0, shelter: { x: 24, z: 160.5 } },
+];

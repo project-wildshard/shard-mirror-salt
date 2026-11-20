@@ -6,7 +6,8 @@
 // are its hull. shard.ts runs it after world.ts's scene, with its materials.
 import * as THREE from 'three';
 import { solid, type ShardWorld } from '@wildshard/sdk/scene/author';
-import { GATES, SPAWN } from './layout';
+import { paintCanvas } from '@wildshard/sdk/scene/canvas';
+import { DOCKS, GATES, type DockSpot } from './layout.ts';
 import { landSail, WIND, type Materials } from './world';
 
 /** An empty node: where a rider sits or steps off. */
@@ -76,6 +77,39 @@ export function buildVehicles(world: ShardWorld, M: Materials): void {
   // the two the cleanroom set racing down the flat, now parked there for whoever walks out to them
   world.dock('flat.gold', spot(world, g3.x - 4, g3.z + 14, 0.35), { kind: 'salt.land-sail-gold', per: 'shared', respawn: 60 });
   world.dock('flat.red', spot(world, g5.x + 3, g5.z + 20, -0.25), { kind: 'salt.land-sail-red', per: 'shared', respawn: 60 });
-  // the Start Yard: a buggy of their own for each player, beside where they arrive
-  world.dock('yard.buggy', spot(world, SPAWN.x - 8, SPAWN.z + 4, 0), { kind: 'salt.buggy', per: 'player', respawn: 20 });
+  // MSZ25: each player's own buggy or sail at each gate road's mouth and in the Start Yard, each with a shelter and its sign
+  for (const d of DOCKS) {
+    world.dock(d.id, spot(world, d.at.x, d.at.z, d.yaw), { kind: d.kind === 'buggy' ? 'salt.buggy' : 'salt.land-sail', per: 'player', respawn: 20 });
+  }
+  world.part('docks', (part) => { for (const d of DOCKS) part.add(shelter(M, d)); });
+}
+
+/** A dock's sign: the amber ring of the gate boards round a dark plate, DOCK over where it stands. */
+function signMaterial(name: string): THREE.MeshStandardMaterial {
+  const map = paintCanvas(128, 64, (g) => {
+    g.fillStyle = '#ffb54a'; g.fillRect(0, 0, 128, 64);
+    g.fillStyle = '#2a1e2a'; g.fillRect(4, 4, 120, 56);
+    g.fillStyle = '#fff2d0'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = 'bold 26px sans-serif'; g.fillText('DOCK', 64, 22);
+    g.font = '15px sans-serif'; g.fillText(name.toUpperCase(), 64, 46);
+  });
+  return new THREE.MeshStandardMaterial({ map, emissive: '#ffffff', emissiveMap: map, emissiveIntensity: 0.45, side: THREE.DoubleSide });
+}
+
+/** A dock's shelter: a lean-to of four posts and a sloped plank roof over a crate of parts, its sign on a post facing the
+ *  road the vehicle leaves by, and a lamp. Scenery: nothing in it is solid, so a walker or a buggy never snags on it. */
+function shelter(M: Materials, d: DockSpot): THREE.Group {
+  const g = new THREE.Group();
+  g.position.set(d.shelter.x, 0, d.shelter.z); g.rotation.y = d.yaw;
+  for (const [x, z, h] of [[-1.2, -1.2, 2.6], [1.2, -1.2, 2.6], [-1.2, 1.2, 2.1], [1.2, 1.2, 2.1]] as const) {
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, h, 6), M.wood); post.position.set(x, h / 2, z); g.add(post);
+  }
+  const roof = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.1, 3.0), M.wood); roof.position.set(0, 2.4, 0); roof.rotation.x = -0.17; g.add(roof);
+  const crate = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.7, 0.8), M.stoneDark); crate.position.set(0.3, 0.35, 0.5); g.add(crate);
+  const signPost = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 3.0, 6), M.post); signPost.position.set(0, 1.5, -1.9); g.add(signPost);
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.8), signMaterial(d.name)); sign.position.set(0, 2.6, -1.93); sign.rotation.y = Math.PI; g.add(sign);
+  const back = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.8), signMaterial(d.name)); back.position.set(0, 2.6, -1.87); g.add(back);
+  const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 8), M.lamp); lamp.position.set(0, 3.1, -1.9); g.add(lamp);
+  g.traverse((o) => { if (o instanceof THREE.Mesh) o.castShadow = true; });
+  return g;
 }
