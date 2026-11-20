@@ -9,6 +9,7 @@ import { solid, type ShardWorld } from '@wildshard/sdk/scene/author';
 import { paintCanvas } from '@wildshard/sdk/scene/canvas';
 import { DOCKS, GATES, type DockSpot } from './layout.ts';
 import { landSail, WIND, type Materials } from './world';
+import { BUGGY_SOUNDS, SAIL_SOUNDS } from './audio.ts';
 
 /** An empty node: where a rider sits or steps off. */
 function mark(name: string, x: number, y: number, z: number): THREE.Object3D {
@@ -62,12 +63,12 @@ function spot(world: ShardWorld, x: number, z: number, yaw: number): THREE.Objec
 /** Every kind and every dock. */
 export function buildVehicles(world: ShardWorld, M: Materials): void {
   const sail = { speed: 12, reverse: 0, accel: 4, brake: 6, turn: 1.1, grip: 0.9, drift: 0.3, boost: 1.6, mass: 250, pose: 'stand' as const,
-    wind: { toward: [WIND.x, -WIND.y] as const, push: 4 }, labels: { drive: 'Board the land-sail', leave: 'Leave the land-sail' } };
+    wind: { toward: [WIND.x, -WIND.y] as const, push: 4 }, labels: { drive: 'Board the land-sail', leave: 'Leave the land-sail' }, sounds: SAIL_SOUNDS };
   world.vehicle('salt.land-sail', sailKind(M, M.sailTeal), sail);
   world.vehicle('salt.land-sail-red', sailKind(M, M.sailRed), sail);
   world.vehicle('salt.land-sail-gold', sailKind(M, M.sailGold), sail);
   world.vehicle('salt.buggy', buggy(M), { speed: 22, reverse: 6, accel: 9, brake: 18, turn: 1.6, grip: 0.8, drift: 0.4, boost: 1.5, mass: 600,
-    labels: { drive: 'Drive the buggy', ride: 'Ride in the buggy', leave: 'Get out' } });
+    labels: { drive: 'Drive the buggy', ride: 'Ride in the buggy', leave: 'Get out' }, sounds: BUGGY_SOUNDS });
   const g0 = GATES[0], g3 = GATES[3], g5 = GATES[5];
   if (g0 === undefined || g3 === undefined || g5 === undefined) throw new Error('Mirror Salt has nine gates');
   // the GO line: the teal sail a player rode before (rev 4), with the red and the gold beside it

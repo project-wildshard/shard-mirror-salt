@@ -66,6 +66,24 @@ export function saltAudio(audio: Audio): Audio {
   } };
 }
 
+/** A vehicle recording's declared path by its name (`vehicle-recordings.json`). */
+function clip(name: string): string {
+  const path = Object.keys(vehicleRecordings).find(url => url.endsWith(`/${name}.m4a`));
+  if (path === undefined) throw new Error(`Missing Mirror Salt vehicle recording ${name}`);
+  return path;
+}
+/** MSZ15: the vehicles' cues. Each recording plays as itself (the engine reads a cue whose voice is a declared recording);
+ *  a hit plays the engine's material impact voice: stone for the buggy's steel tub, wood for a sail's frame. */
+const VEHICLE_CUES = [
+  { id: 'salt.buggy.motor', voice: clip('buggy-motor') }, { id: 'salt.buggy.skid', voice: clip('buggy-skid') },
+  { id: 'salt.sail.luff', voice: clip('sail-luff') }, { id: 'salt.sail.creak', voice: clip('sail-creak') },
+  { id: 'salt.horn', voice: clip('horn') }, { id: 'salt.hit.buggy', voice: 'impact-stone' }, { id: 'salt.hit.sail', voice: 'impact-wood' },
+];
+/** MSZ15: what each kind plays (`world.vehicle`'s `sounds`). A sail has no motor: its loop is the luff of its cloth, and its
+ *  skid the creak of its frame as it slides. */
+export const BUGGY_SOUNDS = { loop: 'salt.buggy.motor', skid: 'salt.buggy.skid', impact: 'salt.hit.buggy', horn: 'salt.horn' } as const;
+export const SAIL_SOUNDS = { loop: 'salt.sail.luff', skid: 'salt.sail.creak', impact: 'salt.hit.sail', horn: 'salt.horn' } as const;
+
 /** The original, content-addressed samples for MSZ15. Keep them in the local audio budget. */
 export function saltVehicleClips(shard: Shardfile, clips: ReadonlyMap<string, Uint8Array>, asset: (bytes: Uint8Array) => string): Shardfile {
   const recordings: Record<string, string> = { ...shard.audio.recordings };
@@ -81,7 +99,7 @@ export function saltVehicleClips(shard: Shardfile, clips: ReadonlyMap<string, Ui
   for (const file of files) { library.compressed += file.compressed; library.resident += file.decoded + file.gpu; }
   return { ...shard, files: [...shard.files, ...files].sort((a, b) => a.hash.localeCompare(b.hash)),
     library: [...shard.library, ...files.map(row => row.hash)], budgets: { ...shard.budgets, library },
-    audio: { ...saltAudio(shard.audio), recordings } };
+    audio: { ...saltAudio(shard.audio), recordings, cues: [...shard.audio.cues, ...VEHICLE_CUES] } };
 }
 
 export const saltVehicleInputs = Object.values(vehicleRecordings);
