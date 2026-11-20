@@ -7,7 +7,8 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { animate, drift, solid, sway, Water, type ShardWorld } from '@wildshard/sdk/scene/author';
 import { paintCanvas } from '@wildshard/sdk/scene/canvas';
-import { FLOOD_RADIUS, GATES, SPAWN } from './layout';
+import { fbm, groundHeight, roadAt, smooth } from './ground.ts';
+import { FLOOD_RADIUS, GATES, SPAWN } from './layout.ts';
 import { duskSky, SUN_DIRECTION } from './sky';
 
 /** Seeded randomness: each section owns its stream, so editing one never moves another. */
@@ -15,34 +16,18 @@ export function stream(seed: number): () => number {
   let s = seed % 2147483647 || 1;
   return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
 }
-function hash(x: number, z: number): number { const s = Math.sin(x * 127.1 + z * 311.7) * 43758.5453; return s - Math.floor(s); }
-function vnoise(x: number, z: number): number {
-  const xi = Math.floor(x), zi = Math.floor(z), xf = x - xi, zf = z - zi;
-  const u = xf * xf * (3 - 2 * xf), v = zf * zf * (3 - 2 * zf);
-  const a = hash(xi, zi), b = hash(xi + 1, zi), c = hash(xi, zi + 1), d = hash(xi + 1, zi + 1);
-  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
-}
-export function fbm(x: number, z: number, oct = 4): number { let s = 0, a = 0.5, f = 1; for (let i = 0; i < oct; i++) { s += a * vnoise(x * f, z * f); f *= 2.03; a *= 0.5; } return s; }
 const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
-const smooth = (a: number, b: number, x: number): number => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 
-
-/** The ground: the salt flat at 0 m, a ring of mesas past 170 m, cut by four passes where the entry roads come in. */
-export function groundHeight(x: number, z: number): number {
-  const ring = smooth(170, 232, Math.hypot(x, z));
-  if (ring <= 0) return 0;
-  const pass = smooth(12, 38, Math.min(Math.abs(x), Math.abs(z)));
-  const n = fbm(x * 0.012 + 3, z * 0.012 - 7, 4);
-  const top = n > 0.48 ? 34 + (n - 0.48) * 40 : 9 + n * 10;
-  return ring * pass * top * (0.75 + fbm(x * 0.05, z * 0.05, 2) * 0.5);
-}
 const SALT = new THREE.Color('#f3e6e2'), ROSE = new THREE.Color('#e8c9c2'), ROCK = new THREE.Color('#b0785f'), ROCK_HI = new THREE.Color('#d39a7c');
-/** Salt white to rose at the waterline, then sandstone up the mesas (linear RGB). */
+const TRACK = new THREE.Color('#b99486'), TRACK_DARK = new THREE.Color('#9c7668');
+/** Salt white to rose at the waterline, then sandstone up the mesas (linear RGB); a road is packed rose-brown track. */
 export function groundColour(x: number, z: number): [number, number, number] {
   const y = groundHeight(x, z);
   const salt = SALT.clone().lerp(ROSE, fbm(x * 0.03, z * 0.03, 3) * 0.7);
   const rock = ROCK.clone().lerp(ROCK_HI, smooth(6, 40, y));
   const c = salt.lerp(rock, smooth(0.4, 3.5, y));
+  const road = roadAt(x, z);
+  if (road !== null) c.lerp(TRACK.clone().lerp(TRACK_DARK, fbm(x * 0.4, z * 0.4, 2)), smooth(0.55, 0.95, road.weight) * 0.85);
   return [c.r, c.g, c.b];
 }
 
@@ -87,6 +72,7 @@ export function crust(part: THREE.Group, M: Materials): void {
     if (Math.hypot(x, z) > FLOOD_RADIUS + 20) continue;
     if (fbm(x * 0.02 + 5, z * 0.02, 3) < 0.5) continue;
     if (GATES.some((g) => Math.hypot(x - g.x, (z - g.z) * 0.25) < 12)) continue; // keep the race line wet
+    if (roadAt(x, z) !== null) continue; // MSZ24: the roads are dry packed track
     const s = 0.7 + rand() * 0.6;
     m4.compose(new THREE.Vector3(x, 0.05, z), q.setFromEuler(e.set(0, rand() * 3, 0)), new THREE.Vector3(s, 1, s));
     plates.push(hex.clone().applyMatrix4(m4));
@@ -113,6 +99,7 @@ export function arches(part: THREE.Group, M: Materials): void {
   for (let i = 0; i < 46; i++) {
     const x = lerp(-150, 150, rand()), z = lerp(-170, 200, rand());
     if (GATES.some((g) => Math.hypot(x - g.x, z - g.z) < 18)) continue;
+    if (roadAt(x, z) !== null) continue; // MSZ24: no loose stone on a road
     geos.push(new THREE.DodecahedronGeometry(0.4 + rand() * 1.6, 0).translate(x, 0.2, z).toNonIndexed());
   }
   const mesh = new THREE.Mesh(mergeGeometries(geos.map((g) => { g.deleteAttribute('uv'); return g; })), M.stone);

@@ -36,9 +36,11 @@ export const FLOOD_RADIUS = 178;
 /** Half the cell's side, and how far in a traveller from a gate road arrives (engine `CHUNK_HALF`, `ARRIVAL_DEPTH`). */
 export const CELL_HALF = 250;
 export const ARRIVAL_IN = 236;
-/** The ring of mesas: it rises from this radius (world.ts `groundHeight`) and the rim road runs round it at `RIM_ROAD`. */
+/** The ring of mesas: it rises from this radius (`ground.ts` `mesaHeight`) and the rim road runs round it at `RIM_ROAD`. */
 export const RING_INNER = 170;
 export const RIM_ROAD = 205;
+/** How high the rim road's shelf and the lookout stand over the flat, between the low stretches (MSZ24, `ground.ts`). */
+export const RIM_SHELF = 10;
 
 /** The seven regions. Every rect but the rim's is disjoint from the others; `regionAt` gives the rest to the rim. */
 export const REGIONS: readonly Region[] = [
@@ -82,13 +84,18 @@ export interface Road {
   /** Its centre line, start to end. */
   readonly line: readonly Spot[];
   readonly width: number;
+  /** The height it holds over the flat (m); none, the flat's own 0. The rim road's height is its own profile (`ground.ts`). */
+  readonly deck?: number;
 }
 
-/** The rim road: a ring at `RIM_ROAD`, 24 points, closed, from the south-east mesa round past each pass on an axis. */
-const rimLine: Spot[] = Array.from({ length: 25 }, (_, i) => {
-  const a = Math.PI / 4 + (i / 24) * Math.PI * 2, at = (v: number): number => Math.round(v * RIM_ROAD * 10) / 10 + 0;
+/** The rim road: a ring at `RIM_ROAD`, 48 points, closed, from the south-east mesa round past each pass on an axis. */
+const rimLine: Spot[] = Array.from({ length: 49 }, (_, i) => {
+  const a = Math.PI / 4 + (i / 48) * Math.PI * 2, at = (v: number): number => Math.round(v * RIM_ROAD * 10) / 10 + 0;
   return { x: at(Math.sin(a)), z: at(Math.cos(a)) };
 });
+
+/** Where the lookout's spur meets the rim road: on the ring, where its shelf stands full height. */
+export const LOOKOUT_JOIN: Spot = { x: 167.9, z: -117.6 };
 
 /** Every road: one in from each gate to the Start Yard, the links between regions, the rim road. */
 export const ROADS: readonly Road[] = [
@@ -104,10 +111,12 @@ export const ROADS: readonly Road[] = [
     line: [ENTRIES.east, { x: 180, z: 0 }, { x: 110, z: 0 }, { x: 70, z: 70 }, { x: 45, z: 125 }, { x: 40, z: 145 }] },
   { id: 'canyon-road', kind: 'link', from: 'arches', to: 'canyon', width: 9,
     line: [{ x: 10, z: -105 }, { x: 35, z: -140 }, { x: 70, z: -170 }, { x: 95, z: -205 }] },
-  { id: 'lookout-drop', kind: 'link', from: 'rim', to: 'canyon', width: 8,
-    line: [{ x: 195, z: -185 }, { x: 160, z: -170 }, { x: 120, z: -165 }, { x: 70, z: -170 }] },
+  // the lookout's spur runs level along the north-east mesa onto the rim road's shelf; the Canyon Drop goes on round the rim
+  // road, down its ramp into the canyon and down the canyon road
+  { id: 'lookout-spur', kind: 'link', from: 'rim', to: 'canyon', width: 8, deck: RIM_SHELF,
+    line: [{ x: 195, z: -185 }, { x: 188, z: -150 }, LOOKOUT_JOIN] },
   { id: 'wreck-track', kind: 'link', from: 'yard', to: 'wrecks', width: 7,
-    line: [{ x: -45, z: 165 }, { x: -80, z: 170 }, { x: -120, z: 160 }] },
+    line: [{ x: -45, z: 165 }, { x: -80, z: 160 }, { x: -110, z: 145 }] },
   { id: 'mirror-shore', kind: 'link', from: 'arches', to: 'mirror', width: 7,
     line: [{ x: -30, z: 40 }, { x: -70, z: 50 }, { x: -95, z: 70 }] },
   { id: 'pan-road', kind: 'link', from: 'arches', to: 'pans', width: 8,
@@ -125,7 +134,7 @@ export const PLACES: readonly Place[] = [
   { id: 'sunken-sail', name: 'The Sunken Sail', region: 'mirror', at: { x: -95, z: 70 }, radius: 12 },
   { id: 'pan-grid', name: 'The Pan Grid', region: 'pans', at: { x: 100, z: 20 }, radius: 30 },
   { id: 'salt-works', name: 'The Old Salt Works', region: 'pans', at: { x: 150, z: 85 }, radius: 18 },
-  { id: 'sail-graveyard', name: 'The Sail Graveyard', region: 'wrecks', at: { x: -120, z: 160 }, radius: 25 },
+  { id: 'sail-graveyard', name: 'The Sail Graveyard', region: 'wrecks', at: { x: -112, z: 148 }, radius: 22 },
   { id: 'glass-gorge', name: 'The Glass Gorge', region: 'canyon', at: { x: 45, z: -150 }, radius: 20 },
   { id: 'colossus-hollow', name: 'Colossus Hollow', region: 'canyon', at: { x: 95, z: -215 }, radius: 22 },
   { id: 'sun-lookout', name: 'The Sun Lookout', region: 'rim', at: { x: 195, z: -185 }, radius: 12 },
