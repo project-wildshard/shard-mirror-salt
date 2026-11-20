@@ -89,7 +89,7 @@ export function arches(part: THREE.Group, M: Materials): void {
   const geos: THREE.BufferGeometry[] = [];
   const legs: [number, number, number][] = [];
   for (const g of GATES.slice(1)) {
-    const w = g.width, h = g.height, t = 1.9 + rand() * 0.6;
+    const w = g.width, h = g.height, t = 1.3 + rand() * 0.5;
     // MSZ40: hewn sandstone, a square section in blocky courses (4 sides, 9 voussoirs), not a smooth hoop
     const arch = new THREE.TorusGeometry(w, t, 4, 9, Math.PI).toNonIndexed();
     arch.scale(1, h / w, 1.0); arch.rotateY(g.yaw); arch.translate(g.x, -0.4, g.z);
@@ -108,8 +108,8 @@ export function arches(part: THREE.Group, M: Materials): void {
   mesh.castShadow = true; mesh.receiveShadow = true;
   part.add(mesh);
   for (const [x, z, r] of legs) {
-    const leg = new THREE.Mesh(new THREE.BoxGeometry(r * 1.6, r * 1.3, r * 1.6), M.stoneDark);
-    leg.position.set(x, r * 0.5, z); leg.rotation.y = x * 0.37; leg.castShadow = true; leg.receiveShadow = true;
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(r * 1.2, r * 0.9, r * 1.2), M.stoneDark);
+    leg.position.set(x, r * 0.3, z); leg.rotation.y = x * 0.37; leg.castShadow = true; leg.receiveShadow = true;
     part.add(solid(leg));
   }
 }
