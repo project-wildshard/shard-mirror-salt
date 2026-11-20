@@ -36,7 +36,7 @@ function sunkenSail(part: THREE.Group, M: Materials): void {
   const { x, z } = MIRROR.WRECK;
   const torn = new THREE.MeshStandardMaterial({ color: '#7a9e9a', roughness: 0.9, side: THREE.DoubleSide });
   const wreck = landSail(M, torn, false);
-  wreck.position.set(x, -0.35, z); wreck.rotation.set(0.15, 0.9, 1.05); part.add(wreck);
+  wreck.position.set(x, -0.35, z); wreck.rotation.set(0.15, 0.9, 1.05); wreck.scale.setScalar(1.8); part.add(wreck); // MSZ40: reads across the Mirror
   const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 3.2, 8), M.wood); mast.position.set(x + 2.6, 0.2, z - 1.5); mast.rotation.set(0.1, 0.3, 1.45); part.add(mast);
   const hull = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.0, 3.8), M.wood); hull.position.set(x, 0.3, z); hull.rotation.y = 0.9; hull.visible = false; part.add(solid(hull));
   const cx = x - 2.2, cz = z + 1.6;

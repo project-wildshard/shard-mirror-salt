@@ -18,7 +18,7 @@ export function stream(seed: number): () => number {
 }
 const lerp = (a: number, b: number, t: number): number => a + (b - a) * t;
 
-const SALT = new THREE.Color('#f3e6e2'), ROSE = new THREE.Color('#e8c9c2'), ROCK = new THREE.Color('#b0785f'), ROCK_HI = new THREE.Color('#d39a7c');
+const SALT = new THREE.Color('#f3e6e2'), ROSE = new THREE.Color('#e8c9c2'), ROCK = new THREE.Color('#9c5f45'), ROCK_HI = new THREE.Color('#d39a7c');
 const DEEP = new THREE.Color('#5d6878'), TRACK = new THREE.Color('#b99486'), TRACK_DARK = new THREE.Color('#9c7668');
 /** Salt white to rose at the waterline, then sandstone up the mesas (linear RGB); a road is packed rose-brown track. */
 export function groundColour(x: number, z: number): [number, number, number] {
@@ -70,7 +70,8 @@ export function crust(part: THREE.Group, M: Materials): void {
   for (let i = 0; i < 9000 && plates.length < 2600; i++) {
     const x = lerp(-170, 170, rand()), z = lerp(-170, 230, rand());
     if (Math.hypot(x, z) > FLOOD_RADIUS + 20) continue;
-    if (fbm(x * 0.02 + 5, z * 0.02, 3) < 0.5) continue;
+    if (fbm(x * 0.02 + 5, z * 0.02, 3) < 0.56) continue;
+    if (mirrorDeep(x, z) > 0.05) continue; // MSZ40: the Deep Mirror is one unbroken sheet
     if (GATES.some((g) => Math.hypot(x - g.x, (z - g.z) * 0.25) < 12)) continue; // keep the race line wet
     if (roadAt(x, z) !== null) continue; // MSZ24: the roads are dry packed track
     const s = 0.7 + rand() * 0.6;
@@ -88,9 +89,10 @@ export function arches(part: THREE.Group, M: Materials): void {
   const geos: THREE.BufferGeometry[] = [];
   const legs: [number, number, number][] = [];
   for (const g of GATES.slice(1)) {
-    const w = g.width, h = g.height, t = 1.3 + rand() * 0.5;
-    const arch = new THREE.TorusGeometry(w, t, 7, 20, Math.PI);
-    arch.scale(1, h / w, 0.8); arch.rotateY(g.yaw); arch.translate(g.x, -0.4, g.z);
+    const w = g.width, h = g.height, t = 1.9 + rand() * 0.6;
+    // MSZ40: hewn sandstone, a square section in blocky courses (4 sides, 9 voussoirs), not a smooth hoop
+    const arch = new THREE.TorusGeometry(w, t, 4, 9, Math.PI).toNonIndexed();
+    arch.scale(1, h / w, 1.0); arch.rotateY(g.yaw); arch.translate(g.x, -0.4, g.z);
     geos.push(arch.toNonIndexed());
     for (const side of [-1, 1]) {
       legs.push([g.x + Math.cos(g.yaw) * side * (w + 0.4), g.z - Math.sin(g.yaw) * side * (w + 0.4), 1.9 + rand()]);
@@ -106,8 +108,8 @@ export function arches(part: THREE.Group, M: Materials): void {
   mesh.castShadow = true; mesh.receiveShadow = true;
   part.add(mesh);
   for (const [x, z, r] of legs) {
-    const leg = new THREE.Mesh(new THREE.DodecahedronGeometry(r, 0), M.stoneDark);
-    leg.position.set(x, 0.7, z); leg.castShadow = true; leg.receiveShadow = true;
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(r * 1.6, r * 1.3, r * 1.6), M.stoneDark);
+    leg.position.set(x, r * 0.5, z); leg.rotation.y = x * 0.37; leg.castShadow = true; leg.receiveShadow = true;
     part.add(solid(leg));
   }
 }
@@ -189,7 +191,7 @@ export function dust(part: THREE.Group): void {
 /** The flood: a circle of shallow water over the flat, the mirror. */
 export function flood(part: THREE.Group): void {
   const shape = new THREE.Shape(); shape.absarc(0, 0, FLOOD_RADIUS, 0, Math.PI * 2, false);
-  const water = new Water(shape, { tint: '#d9c9c9', reflect: 'planar', segments: 96 });
+  const water = new Water(shape, { tint: '#cfcfdb', reflect: 'planar', segments: 96 });
   water.position.y = 0.04;
   part.add(water);
 }
@@ -197,7 +199,7 @@ export function flood(part: THREE.Group): void {
 /** The dusk light (cleanroom main.js): the sky, the hemisphere, the low sun down the race line, the haze, the composer. */
 export function dusk(world: ShardWorld): void {
   world.sky(duskSky(), { environment: { intensity: 0.8, ground: [0.95, 0.83, 0.75] } });
-  world.scene.fog = new THREE.FogExp2(new THREE.Color('#e9b3a2'), 0.0026);
+  world.scene.fog = new THREE.FogExp2(new THREE.Color('#e9b3a2'), 0.0019);
   world.part('light', (part) => {
     part.add(new THREE.HemisphereLight(new THREE.Color('#a7a6e8'), new THREE.Color('#f2d3c0'), 0.9));
     const sun = new THREE.DirectionalLight(new THREE.Color('#ffc48a'), 2.2);

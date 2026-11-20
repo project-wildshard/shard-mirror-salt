@@ -138,7 +138,7 @@ function glassSpires(part: THREE.Group): void {
   const amberM = plain('#f0b878', 0.12, { metalness: 0.1, emissive: '#c86a20', emissiveIntensity: 0.35, transparent: true, opacity: 0.85 });
   const tealM = plain('#9fe3d8', 0.12, { metalness: 0.1, emissive: '#3fb0a8', emissiveIntensity: 0.3, transparent: true, opacity: 0.85 });
   let clusters = 0;
-  for (let i = 0; i < 400 && clusters < 26; i++) {
+  for (let i = 0; i < 500 && clusters < 34; i++) {
     const seg = Math.floor(rand() * (canyonRoad.length - 1)), a = canyonRoad[seg], b = canyonRoad[seg + 1];
     if (a === undefined || b === undefined) continue;
     const t = rand(), side = rand() < 0.5 ? -1 : 1, off = 9 + rand() * 9, len = Math.hypot(b.x - a.x, b.z - a.z);
@@ -146,9 +146,10 @@ function glassSpires(part: THREE.Group): void {
     const road = roadAt(x, z);
     if ((road !== null && road.weight > 0.2) || Math.hypot(x - ARENA.x, z - ARENA.z) < ARENA.ring + 4) continue;
     clusters++;
-    const y = groundHeight(x, z), n = 3 + Math.floor(rand() * 4);
+    // MSZ40: by the gorge the glass stands as walls (to ~20 m), thinning to knee-high shards down the road
+    const y = groundHeight(x, z), n = 3 + Math.floor(rand() * 4), S = 1 + 1.4 * Math.max(0, 1 - Math.hypot(x - GORGE.x, z - GORGE.z) / 70);
     for (let k = 0; k < n; k++) {
-      const h = 2 + rand() * (k === 0 ? 7 : 3.5), r = 0.25 + rand() * 0.45;
+      const h = (2 + rand() * (k === 0 ? 7 : 3.5)) * S, r = (0.25 + rand() * 0.45) * S;
       const geo = placed(new THREE.CylinderGeometry(r * 0.15, r, h, 6), x + (rand() - 0.5) * 2.4, y + h / 2 - 0.2, z + (rand() - 0.5) * 2.4, (rand() - 0.5) * 0.5, rand() * 3, (rand() - 0.5) * 0.5);
       (rand() < 0.55 ? amber : teal).push(geo);
     }

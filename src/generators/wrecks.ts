@@ -41,6 +41,8 @@ const plain = (color: string, roughness = 0.9, extra: THREE.MeshStandardMaterial
 /** Faded sail cloth: the Cup's teal, red and gold bleached by years of sun, and plain canvas. */
 const CLOTH = ['#8fb3ad', '#c88f80', '#d8c38f', '#e2d8cc'].map((c) => plain(c, 0.95, { side: THREE.DoubleSide }));
 const rusted = plain('#7d5a44', 0.8, { metalness: 0.3 });
+/** MSZ40: sun-bleached timber, grey-white where the salt wind scoured it (the yard's live sails keep the dark wood). */
+const BLEACHED = plain('#c9b8a3', 0.95, { flatShading: true }), BLEACHED_DARK = plain('#a8957f', 0.95, { flatShading: true });
 
 /** Gathers placed geometry by material, so the whole field draws in a handful of meshes. */
 class Buckets {
@@ -61,17 +63,17 @@ const m4 = (x: number, y: number, z: number, rx = 0, ry = 0, rz = 0, s = 1): THR
  *  its cloth, torn short. `frame` places it. */
 function wreck(b: Buckets, M: Materials, w: Wreck, frame: THREE.Matrix4): void {
   const put = (g: THREE.BufferGeometry, mat: THREE.Material, local: THREE.Matrix4): void => { b.add(g, mat, frame.clone().multiply(local)); };
-  put(new THREE.BoxGeometry(1.2, 0.25, 3.6), M.wood, m4(0, 0.7, 0));
-  put(new THREE.BoxGeometry(1.25, 0.06, 3.0), M.stoneDark, m4(0, 0.84, 0.1));
-  put(new THREE.BoxGeometry(3.4, 0.15, 0.2), M.wood, m4(w.pose === 'stripped' ? -0.6 : 0, 0.62, 0.9, 0, 0, w.pose === 'stripped' ? 0.25 : 0));
+  put(new THREE.BoxGeometry(1.2, 0.25, 3.6), BLEACHED, m4(0, 0.7, 0));
+  put(new THREE.BoxGeometry(1.25, 0.06, 3.0), BLEACHED_DARK, m4(0, 0.84, 0.1));
+  put(new THREE.BoxGeometry(3.4, 0.15, 0.2), BLEACHED, m4(w.pose === 'stripped' ? -0.6 : 0, 0.62, 0.9, 0, 0, w.pose === 'stripped' ? 0.25 : 0));
   const wheels: [number, number][] = w.pose === 'side' ? [[-1.6, 0.9], [0, -1.7]] : w.pose === 'nose' ? [[1.6, 0.9], [-1.6, 0.9]] : [[-1.6, 0.9]];
   for (const [x, z] of wheels) put(new THREE.TorusGeometry(0.42, 0.09, 6, 14), rusted, m4(x, 0.42, z, 0, Math.PI / 2, 0));
-  const mastLen = w.pose === 'stripped' ? 2.2 : 3.4;
-  put(new THREE.CylinderGeometry(0.07, 0.09, mastLen, 7), M.wood, m4(0, 0.85 + mastLen / 2, -0.4));
+  const mastLen = w.pose === 'stripped' ? 3.0 : 7.5; // MSZ40: masts that stand out of the field
+  put(new THREE.CylinderGeometry(0.07, 0.09, mastLen, 7), BLEACHED, m4(0, 0.85 + mastLen / 2, -0.4));
   // the snapped top lies off to one side
-  put(new THREE.CylinderGeometry(0.06, 0.07, 2.6, 7), M.wood, m4(1.6, 0.25, -1.4, 0, 0.6, Math.PI / 2));
+  put(new THREE.CylinderGeometry(0.06, 0.07, 2.6, 7), BLEACHED, m4(1.6, 0.25, -1.4, 0, 0.6, Math.PI / 2));
   if (w.pose !== 'stripped') {
-    const shape = new THREE.Shape(); shape.moveTo(0, 0); shape.lineTo(0, mastLen - 0.4); shape.lineTo(0.9, 1.6); shape.lineTo(1.7, 1.1); shape.lineTo(2.2, 0.1); shape.lineTo(0, 0);
+    const shape = new THREE.Shape(); shape.moveTo(0, 0); shape.lineTo(0, mastLen - 0.6); shape.lineTo(1.4, mastLen * 0.55); shape.lineTo(2.4, mastLen * 0.38); shape.lineTo(3.2, 0.1); shape.lineTo(0, 0);
     put(new THREE.ShapeGeometry(shape, 1), CLOTH[w.tint] ?? M.crust, m4(0.05, 1.0, -0.4, 0, Math.PI / 2 - 0.5, 0));
   }
 }
