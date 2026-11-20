@@ -18,6 +18,8 @@ export const STRIKES = {
   // MSZ28: a crab's pinch; the King's crush (the big claw comes down) and its brine spray (a wide cone in front)
   crabPinch: strike('pans.crab.pinch', 'brineCrab', { shape: { kind: 'point', radius: 1.3 }, windup: 0.45, active: 0.15, recover: 0.5, cooldown: 1.1, range: 1.6, damage: 5, weight: 1, speed: 0 } as Omit<Strike, 'id' | 'tags'>),
   kingCrush: strike('pans.king.crush', 'brineKing', { shape: { kind: 'point', radius: 2 }, windup: 1, active: 0.2, recover: 0.6, cooldown: 0.5, range: 4, damage: 14, weight: 3, speed: 0 } as Omit<Strike, 'id' | 'tags'>),
+  // MSZ29: a dust hound's snapping bite
+  houndBite: strike('wrecks.hound.bite', 'dustHound', { shape: { kind: 'point', radius: 1.3 }, windup: 0.35, active: 0.12, recover: 0.45, cooldown: 1, range: 1.7, damage: 6, weight: 1, speed: 0 } as Omit<Strike, 'id' | 'tags'>),
   kingSpray: strike('pans.king.spray', 'brineKing', { shape: { kind: 'arc', radius: 5, halfAngle: 0.9 }, windup: 1, active: 0.3, recover: 0.8, cooldown: 2, range: 6, damage: 9, weight: 1, speed: 0 } as Omit<Strike, 'id' | 'tags'>),
 } as const;
 
@@ -28,6 +30,9 @@ export const BRAINS = [
   // MSZ28: a crab scuttles at whoever walks its stretch of the pan road and gives up sooner
   { id: 'pans.crab-pursuit', kind: 'pursue', awareRadius: 12, leashRadius: 24, speed: 1.6, returnSpeed: 2.5, stopDistance: 1.2, turnRate: 5,
     thinkDivisor: 3, attackCooldownTicks: 55, wanderRadius: 5, wanderEveryTicks: 360 },
+  // MSZ29: a hound lopes out at whoever enters the field and runs them down
+  { id: 'wrecks.hound-pursuit', kind: 'pursue', awareRadius: 16, leashRadius: 32, speed: 2.4, returnSpeed: 3, stopDistance: 1.3, turnRate: 6,
+    thinkDivisor: 3, attackCooldownTicks: 50, wanderRadius: 7, wanderEveryTicks: 300 },
 ];
 
 const temper = (brain: string, leash: number): Temperament => ({ brain, reaction: 'aggressive', leash, assist: 0, home: { speed: 2.5, stop: 1.5 } });
@@ -124,6 +129,32 @@ function crabBody(o: { S: number; shell: string; rim: string; crusher: number; c
   ] };
 }
 
+/** A dust hound: a lean sand-coloured hound with a darker saddle, a long snout and tall ears on its `head`, four thin legs
+ *  and a whip tail. It pants at rest, lopes, and lunges to bite. */
+function houndBody(): { body: THREE.Group; clips: THREE.AnimationClip[] } {
+  const root = new THREE.Group(), rest: Xyz = [0, 0.62, 0], body = bone('body', root, ...rest);
+  const coat = paint('#c9a57a'), saddle = paint('#7a5a40'), dark = paint('#2a201a');
+  const torso = mesh(body, new THREE.CapsuleGeometry(0.2, 0.7, 4, 10), coat); torso.rotation.x = Math.PI / 2;
+  const back = mesh(body, new THREE.SphereGeometry(0.21, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), saddle, 0, 0.02, -0.05); back.scale.set(1, 0.6, 2.2);
+  const head = bone('head', body, 0, 0.16, 0.5);
+  const skull = mesh(head, new THREE.SphereGeometry(0.15, 12, 8), coat); skull.scale.set(0.9, 0.85, 1.1);
+  const snout = mesh(head, new THREE.CylinderGeometry(0.06, 0.09, 0.28, 8), coat, 0, -0.03, 0.2); snout.rotation.x = Math.PI / 2;
+  mesh(head, new THREE.SphereGeometry(0.035, 6, 4), dark, 0, -0.02, 0.35);
+  for (const s of [-1, 1]) {
+    const ear = mesh(head, new THREE.ConeGeometry(0.05, 0.18, 5), saddle, s * 0.08, 0.15, -0.02); ear.rotation.z = -s * 0.25;
+    mesh(head, new THREE.SphereGeometry(0.022, 6, 4), dark, s * 0.07, 0.04, 0.12);
+  }
+  for (const [sx, sz] of [[-1, 0.3], [1, 0.3], [-1, -0.32], [1, -0.32]] as const) mesh(body, new THREE.CylinderGeometry(0.035, 0.025, 0.6, 5), coat, sx * 0.11, -0.32, sz);
+  const tail = mesh(body, new THREE.CylinderGeometry(0.02, 0.035, 0.45, 5), saddle, 0, 0.12, -0.6); tail.rotation.x = -0.9;
+  return { body: root, clips: [
+    shift('idle', 'body', rest, [[0, 0, 0], [0, 0.015, 0], [0, 0, 0]], 0.6),
+    shift('walk', 'body', rest, [[0, 0, 0], [0, 0.06, 0.04], [0, 0, 0]], 0.32),
+    shifts('attack', [['body', rest, [[0, 0, 0], [0, 0.04, -0.12], [0, -0.03, 0.35], [0, 0, 0]]], ['head', [0, 0.16, 0.5], [[0, 0, 0], [0, 0.04, 0], [0, -0.06, 0.12], [0, 0, 0]]]], 0.7),
+    shift('hit', 'body', rest, [[0, 0, 0], [0, 0.03, -0.2], [0, 0, 0]], 0.3),
+    shift('die', 'body', rest, [[0, 0, 0], [0, -0.42, 0]], 0.7),
+  ] };
+}
+
 const LOOPS = ['idle', 'walk'];
 const PBR = { family: 'pbr', vertexColours: false } as const;
 
@@ -168,5 +199,16 @@ export function brineCrabs(world: ShardWorld): void {
       dims: { bodyY: 0.83, bodyHalfLen: 1.05, bodyRadius: 1.4, headRadius: 0.4, legLen: 0.83, feet: [], halfWidth: 1.9 },
       variants: [variant('king', 'The Brine King', 300, { rarity: 'rare', weight: 0 })], temperament: BRAINLESS, senses: { notice: 10 } } as never,
     strikes: [STRIKES.kingCrush, STRIKES.kingSpray], size: 'medium', clips: king.clips, loops: LOOPS, material: PBR, attackSpan: 1.4,
+  });
+}
+
+/** MSZ29: the dust hounds of the Wreck Field. */
+export function dustHounds(world: ShardWorld): void {
+  const hound = houndBody();
+  world.creature('wrecks.hound', hound.body, {
+    species: { kind: 'dustHound', label: 'Dust hound', aggressive: true, lockable: true,
+      dims: { bodyY: 0.62, bodyHalfLen: 0.55, bodyRadius: 0.25, headRadius: 0.15, legLen: 0.62, feet: [], halfWidth: 0.3 },
+      variants: [variant('dust', 'Dust hound', 30)], temperament: temper('wrecks.hound-pursuit', 32), senses: { notice: 16 } },
+    strikes: [STRIKES.houndBite], size: 'medium', clips: hound.clips, loops: LOOPS, material: PBR,
   });
 }
