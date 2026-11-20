@@ -5,3 +5,5 @@ import { shard } from './generators/shard';
 export const generate: typeof shard = shard;
 // oxlint-disable-next-line import/no-default-export -- The author CLI executes this project entry.
 export default generate;
+/** The decision scripts' AssemblyScript line budget (behaviour/brineking.as is 29 lines). */
+export const buildOptions = { asLineCeiling: 100 };

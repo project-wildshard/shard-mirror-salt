@@ -132,7 +132,7 @@ export const PLACES: readonly Place[] = [
   { id: 'finish-arch', name: 'The Finish Arch', region: 'arches', at: { x: 11, z: -100 }, radius: 14 },
   { id: 'deep-mirror', name: 'The Deep Mirror', region: 'mirror', at: { x: -125, z: -30 }, radius: 30 },
   { id: 'sunken-sail', name: 'The Sunken Sail', region: 'mirror', at: { x: -95, z: 70 }, radius: 12 },
-  { id: 'pan-grid', name: 'The Pan Grid', region: 'pans', at: { x: 100, z: 20 }, radius: 30 },
+  { id: 'pan-grid', name: 'The Pan Grid', region: 'pans', at: { x: 105, z: -45 }, radius: 34 },
   { id: 'salt-works', name: 'The Old Salt Works', region: 'pans', at: { x: 150, z: 85 }, radius: 18 },
   { id: 'sail-graveyard', name: 'The Sail Graveyard', region: 'wrecks', at: { x: -112, z: 148 }, radius: 22 },
   { id: 'glass-gorge', name: 'The Glass Gorge', region: 'canyon', at: { x: 45, z: -150 }, radius: 20 },
