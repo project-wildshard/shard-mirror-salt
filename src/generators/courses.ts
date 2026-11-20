@@ -62,8 +62,10 @@ export function rivalLines(): Record<string, { readonly line: Point[]; readonly 
     'mirror.arches': { line: GATES.map((g) => on(g)), speed: 10 },
     // one lap of the rim road, clockwise from the south pass as the checkpoints run; the engine closes it on its first point
     'mirror.rim': { line: rimArc(0, -360, 5).map(on), speed: 10 },
-    'mirror.slalom': { line: [slalom.start, ...slalom.checkpoints, slalom.stop].map(on), speed: 7 },
-    'mirror.canyon': { line: [canyon.start, { x: 188, z: -150 }, LOOKOUT_JOIN, ...rimArc(130, 145, 5), rim((145 * Math.PI) / 180), { x: 108, z: -175 }, { x: 95, z: -176 }, { x: 80, z: -172 }, { x: 70, z: -170 }, { x: 35, z: -140 }, canyon.stop].map(on), speed: 9 },
+    // the slalom's gates are tight: he takes them at a crawl next to his rim and arch speed
+    'mirror.slalom': { line: [slalom.start, ...slalom.checkpoints, slalom.stop].map(on), speed: 4.5 },
+    // at 9 he beat a clean 0:38.1 down the drop; the final should be hard, not shut
+    'mirror.canyon': { line: [canyon.start, { x: 188, z: -150 }, LOOKOUT_JOIN, ...rimArc(130, 145, 5), rim((145 * Math.PI) / 180), { x: 108, z: -175 }, { x: 95, z: -176 }, { x: 80, z: -172 }, { x: 70, z: -170 }, { x: 35, z: -140 }, canyon.stop].map(on), speed: 7.5 },
   };
 }
 
