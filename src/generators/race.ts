@@ -5,30 +5,35 @@
 import { GATES } from './layout';
 
 const flag = (i: number): string => `mirror.gate.${String(i)}`;
+// The run on foot counts its own arches (meta MSZ21, 2026-11-21): the Arches race (`courses.ts`) now takes a vehicle
+// (MSZ31's `ride`), and a run begun on foot over its GO line lowers that race's gate flags, so a quest on the shared flags
+// never finished. The foot flags start at arch 1 (the GO line is the race's own), which keeps quests.flags at its 128 cap.
+const foot = (i: number): string => `mirror.foot.gate.${String(i)}`;
 const LAST = GATES.length - 1;
 
-/** The gates' region triggers, in race order. */
-const triggers = GATES.map((g, i) => ({
-  id: flag(i), kind: 'region' as const, flag: flag(i), x: Math.round(g.x * 100) / 100, z: Math.round(g.z * 100) / 100,
-  radius: g.width - 1.5, ...(i === 0 ? {} : { when: { all: [flag(i - 1)] } }),
-}));
+/** The gates' region triggers, in race order: the race's own flags from the GO line, and the run on foot's from arch 1. */
+const gateTriggers = (name: (i: number) => string, first: number) => GATES.slice(first).map((g, at) => {
+  const i = first + at, row = { id: name(i), kind: 'region' as const, flag: name(i), x: Math.round(g.x * 100) / 100, z: Math.round(g.z * 100) / 100, radius: g.width - 1.5 };
+  return i === first ? row : Object.assign(row, { when: { all: [name(i - 1)] } });
+});
+const triggers = [...gateTriggers(flag, 0), ...gateTriggers(foot, 1)];
 
-const steps = GATES.map((g, i) => ({
-  id: i === 0 ? 'start' : i === LAST ? 'finish' : `gate-${String(i)}`,
-  objective: i === 0 ? 'Cross the GO line' : i === LAST ? 'Cross the finish under the last arch' : `Run through arch ${String(i)}`,
-  chip: i === 0 ? 'GO' : i === LAST ? 'Finish' : `Arch ${String(i)} of ${String(LAST - 1)}`,
-  done: { all: [flag(i)] },
-  markers: [{ id: `marker-${String(i)}`, label: i === 0 ? 'Start' : i === LAST ? 'Finish' : `Arch ${String(i)}`, at: { poi: 'world' as const, x: Math.round(g.x * 100) / 100, z: Math.round(g.z * 100) / 100 } }],
+const steps = GATES.map((g, i) => ({ g, i })).slice(1).map(({ g, i }) => ({
+  id: i === LAST ? 'finish' : `gate-${String(i)}`,
+  objective: i === LAST ? 'Cross the finish under the last arch' : `Run through arch ${String(i)}`,
+  chip: i === LAST ? 'Finish' : `Arch ${String(i)} of ${String(LAST - 1)}`,
+  done: { all: [foot(i)] },
+  markers: [{ id: `marker-${String(i)}`, label: i === LAST ? 'Finish' : `Arch ${String(i)}`, at: { poi: 'world' as const, x: Math.round(g.x * 100) / 100, z: Math.round(g.z * 100) / 100 } }],
 }));
 
 /** The quest section `defineShard`'s `extend` adds. */
 export const RACE = {
-  flags: [...GATES.map((_, i) => flag(i)), 'mirror.race'],
+  flags: [...GATES.map((_, i) => flag(i)), ...GATES.slice(1).map((_, at) => foot(at + 1)), 'mirror.race'],
   triggers,
   dialogue: [],
   quests: [{
     id: 'mirror.race', title: 'Run the arches', track: false, completeFlag: 'mirror.race',
-    intro: { objective: 'Run the arch line toward the sun: start at the GO line', chip: 'Race' },
+    intro: { objective: 'Run the arch line toward the sun on foot: from the GO line through every arch', chip: 'Race' },
     steps,
     onComplete: { fact: 'mirror.race', coins: 20 },
   }],

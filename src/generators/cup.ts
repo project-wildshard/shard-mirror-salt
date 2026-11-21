@@ -172,7 +172,8 @@ const sides = [
 export const CUP_QUESTS = {
   // the engine raises `dead:<spawn>` as a body falls; a quest reads one only once it is declared
   flags: [CUP.entered, CUP.licensed, CUP.boomFound, CUP.boomFitted, CUP.crabsCleared, CUP.roadReported, CUP.done, ...Object.values(CUP.sides),
-    COLOSSUS_DEAD, ...(Object.keys(CAMPS) as CampId[]).flatMap((camp) => campBodies(camp).map(dead))],
+    // (the sail skaters' camp has no quest, so its bodies' flags stay undeclared: quests.flags is capped at 128, meta MSZ21)
+    COLOSSUS_DEAD, ...(Object.keys(CAMPS) as CampId[]).filter((camp) => camp !== 'sailSkaters').flatMap((camp) => campBodies(camp).map(dead))],
   triggers,
   quests: [chain, ...sides],
 };
