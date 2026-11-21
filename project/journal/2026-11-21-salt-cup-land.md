@@ -20,4 +20,6 @@ Inspected all three existing cards: the Arches, flooded Mirror,
 stands and buggy still match the source. Changes after the card
 are race rival data, grip, board timings, quest flags, talks and
 Object3D feedback anchors; the Arches geometry is unchanged.
-Use the supported hero --stamp-existing to retain that art.
+The supported stamp command refused changed content. Take a
+fresh headless hero from the current dev build instead; all
+three cards and the content stamp were captured successfully.
