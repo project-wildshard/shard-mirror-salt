@@ -40,7 +40,7 @@ export const shard = defineShard(identity, (world) => {
       dialogue: [...RACE.dialogue, ...[...YARD_DIALOGUE, BRINEWIFE_DIALOGUE, SCRAPPER_DIALOGUE].filter((d) => !CUP_REPLACES.has(d.id)), ...CUP_DIALOGUE, ...FIND_QUESTS.dialogue] },
     ledger: [...data.ledger, ...FIND_LEDGER],
     creatures: { ...data.creatures, brains: [...data.creatures.brains, ...BRAINS] } as typeof data.creatures,
-    targets: { ...data.targets, talks: [...data.targets.talks ?? [], ...YARD_TALKS, ...PANS_TALKS, ...WRECK_TALKS, ...CUP_TALKS, ...FIND_TALKS] },
+    targets: { ...data.targets, talks: [...data.targets.talks ?? [], ...YARD_TALKS, ...PANS_TALKS, ...WRECK_TALKS, ...CUP_TALKS, ...(FIND_TALKS ?? [])] },
   })),
   decisions: [...PANS_DECISIONS, ...CANYON_DECISIONS],
   // MSZ36: the Colossus's chase leaps and stands

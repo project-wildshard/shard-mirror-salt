@@ -75,9 +75,9 @@ export const courseFlag = (course: Course, part: 'go' | 'end' | number): string 
 /** The four races' rows (the arch line's flags and triggers are `race.ts`'s), for `shard.ts` to lay over the scene's quest
  *  rows. Every run is driven. */
 /** A course's trigger row and its race row, as `quests.triggers` and `quests.races` read them (format 0.57.0). */
-export interface CourseTrigger { readonly id: string; readonly kind: 'region'; readonly flag: string; readonly x: number; readonly z: number; readonly radius: number; readonly when?: { readonly all: readonly string[] } }
+export interface CourseTrigger { readonly id: string; readonly kind: 'region'; readonly flag: string; readonly x: number; readonly z: number; readonly radius: number; readonly when?: { readonly all: string[] } }
 export interface CourseRace { readonly id: string; readonly start: string; readonly stop: string; readonly fact: string; readonly cap: number;
-  readonly resets?: readonly string[]; readonly laps?: number; readonly checkpoints?: readonly string[]; readonly ride: 'vehicle';
+  readonly resets?: string[]; readonly laps?: number; readonly checkpoints?: string[]; readonly ride: 'vehicle';
   readonly rival: { readonly name: string; readonly dock: string; readonly line: Point[]; readonly speed: number; readonly beat: string } }
 export function courseRows(): { flags: string[]; triggers: CourseTrigger[]; races: CourseRace[] } {
   const flags: string[] = [], triggers: CourseTrigger[] = [], races: Omit<CourseRace, 'rival'>[] = [];

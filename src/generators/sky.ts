@@ -2,11 +2,12 @@
 // zenith, a rose band, a peach horizon and the low sun straight down the race line. `world.sky(...)` compiles it to the
 // dome's graph.
 import * as THREE from 'three';
+import type { Node } from 'three/webgpu';
 import { dot, max, mix, pow, smoothstep, vec3 } from 'three/tsl';
 import { skyRay } from '@wildshard/sdk/scene/author';
 import type { GraphValue } from '@wildshard/sdk/materials';
 
-type V = ReturnType<typeof vec3>;
+type V = Node<'vec3'>;
 const lin = (hex: string): V => { const c = new THREE.Color(hex); return vec3(c.r, c.g, c.b); };
 const SKY = { top: '#3a3f86', mid: '#f3a68c', bottom: '#f6c9b0', sun: '#ffcf8a' };
 /** Where the sun sits: low over the far pass, down the arch line. */
