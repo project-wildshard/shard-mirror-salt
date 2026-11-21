@@ -1,0 +1,16 @@
+# Land the Salt Cup
+
+> Written by: Codex
+
+> **State:** landing, 2026-11-21.
+
+Lane: codex-tc48. Rebase MSZ34 and MSZ35 with their held zone
+prerequisites onto current main. All 36 shard tests passed on the
+linked proof dependencies. The normal push gate rejected engine
+0.1.44: it does not export the shared vehicle runtime. Pin the
+released SDK and CLI 0.4.22, format 0.63.0 and engine 0.1.64 so
+the gate checks the dependencies another checkout installs.
+
+The cooked native tape already proved nine steps, three turn-ins,
+four side quests and one payoff after the supplied boss defeat.
+The boss fight itself belongs to MSZ36.
