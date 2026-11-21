@@ -44,7 +44,7 @@
     "oxlint": "1.89.0",
     "playwright": "1.65.0",
     "npm-bin-deps": "2.1.0",
-    "@wildshard/engine": "0.1.64"
+    "@wildshard/engine": "0.1.65-next.9c91846e"
   },
   "pnpm": {
     "ignoredOptionalDependencies": [
@@ -133,7 +133,7 @@
       "binaryen": "npm:@pre-bundled/binaryen@132.0.0-patch-1",
       "assemblyscript>binaryen": "npm:@pre-bundled/binaryen@131.0.0-nightly.20260721-patch-1",
       "@wildshard/format": "npm:@wildshard/shard-format@0.66.0",
-      "@wildshard/engine": "0.1.64"
+      "@wildshard/engine": "0.1.65-next.9c91846e"
     }
   },
   "binDependencies": {
