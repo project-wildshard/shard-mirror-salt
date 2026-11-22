@@ -4,34 +4,26 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { loadHeadlessFolder } from '@wildshard/engine/host/headlessFolder';
-import { loadRapier } from '@wildshard/engine/physics/rapier';
-import { outputDescriptor } from '@wildshard/engine/game/shardfile/outputDescriptor';
-import { serverInputFiles } from '@wildshard/engine/game/shardfile/serverSkinRigs';
-import { createShardfileSim } from '@wildshard/engine/game/plugin/simulation';
-import { createQuestLedger } from '@wildshard/engine/game/quest/ledger';
-import { SaveStore } from '@wildshard/engine/saves/store';
-import { actRoutes } from '@wildshard/engine/sim/actRoutes';
-import { questBooks } from '@wildshard/engine/quest/players';
+import { openShardSim, questLedger } from '@wildshard/dev/test/proof';
 import { regionAt } from '../../src/generators/layout.ts';
 
 const [folder, physics, output] = process.argv.slice(2);
 assert.ok(folder && physics && output, 'Usage: salt-finds.mjs <cooked-folder> <rapier.wasm> <report.json>');
-const { shardfile } = await loadHeadlessFolder(folder);
-const descriptor = outputDescriptor(shardfile);
-assert.ok(descriptor);
-const assets = new Map(serverInputFiles(descriptor.index.files, shardfile).map(file => [
-  file.commons === true ? `commons:${file.hash}` : file.hash, Uint8Array.from(readFileSync(join(folder, file.path))),
-]));
 const setId = 'mirror.pennants', dockId = 'yard.sail.ivory', rewardKind = 'salt.land-sail-ivory';
-const ledger = createQuestLedger(new SaveStore(), shardfile, 'salt-finds-tape');
-const grants = [], coins = [];
-const sim = createShardfileSim(shardfile, assets, { rapier: await loadRapier(readFileSync(physics)), sections: descriptor.sections,
-  quest: { fact: (name, who) => { if (name === setId) grants.push(ledger(name, who)); }, coins: (amount, who) => coins.push({ amount, who }) },
-});
+const grants = [];
+/** @type {ReturnType<typeof questLedger> | undefined} */
+let ledger;
+const proof = await openShardSim(folder, { physics, fact: (name, who) => {
+  if (name !== setId) return;
+  assert.ok(ledger, 'the find reward must not be granted before the proof starts');
+  grants.push(ledger(name, who));
+} });
+const { shardfile, sim, coins, descriptor } = proof;
+ledger = questLedger(shardfile, 'salt-finds-tape');
+assert.ok(descriptor);
 const { host, quest, vehicles } = sim;
 assert.ok(vehicles);
-const book = questBooks(host).lead;
+const book = proof.books().lead;
 const guest = 'finds-guest';
 host.addPlayer(guest);
 
@@ -39,8 +31,7 @@ const sections = descriptor.sections.get('world/vehicles');
 const dock = sections.docks.find(row => row.id === dockId);
 assert.ok(dock && dock.kind === rewardKind && dock.per === 'player');
 assert.equal(dock.requiresFlag, 'mirror.pennants.earned');
-const claim = actRoutes(host).claims.get(`${dockId}.dock`);
-assert.ok(claim);
+const claim = player => proof.claim(`${dockId}.dock`, player);
 
 function waitFor(test, message) {
   for (let i = 0; i < 12 && !test(); i++) host.step();
@@ -90,7 +81,7 @@ try {
   assert.deepEqual(ledger.achievement(setId), { count: 1, earned: true });
   assert.equal(grants.length, 1);
   assert.equal(grants[0].recorded, true);
-  assert.ok(!questBooks(host).of(guest).flags.has(dock.requiresFlag));
+  assert.ok(!proof.books().of(guest).flags.has(dock.requiresFlag));
   assert.equal(sit(guest), undefined);
   placeAt([0, 0, 175], guest);
   const reward = sit(book.player);
@@ -112,7 +103,7 @@ try {
     use(target, -0.95);
     host.step();
     assert.equal(coins.length, balance, 'reopening awards no additional coins');
-    assert.ok(!questBooks(host).of(guest).flags.has(`${target.id}.opened`));
+    assert.ok(!proof.books().of(guest).flags.has(`${target.id}.opened`));
     opened.push({ id: target.id, coins: coins.at(-1)?.amount });
   }
   assert.deepEqual(coins.map(row => row.amount), [11, 13, 17]);

@@ -1,6 +1,6 @@
 {
   "name": "@wildshard/shard-mirror-salt",
-  "version": "0.0.1",
+  "version": "0.0.5",
   "private": true,
   "description": "Mirror Salt: a Wildshard shard.",
   "type": "module",
@@ -15,7 +15,7 @@
     "lint:fix": "node kit/scripts/lint.mjs --type-aware --fix --ignore-pattern '.githooks/**' --ignore-pattern '.agents/**' --ignore-pattern 'scripts/agent-parity.mjs' --ignore-pattern 'scripts/agent-sync.mjs' --ignore-pattern 'tmp/**' --ignore-pattern 'cleanroom/**' --ignore-pattern 'src/**' --ignore-pattern 'test/**' --ignore-pattern 'public/**' --ignore-pattern 'scripts/**' --ignore-pattern 'src/**' ",
     "format": "npr oxfmt -c kit/.oxfmtrc.json kit '!src/**' '!test/**' '!cleanroom/**' '!.oxlintrc.author.json'",
     "format:check": "npr oxfmt -c kit/.oxfmtrc.json --check kit '!src/**' '!test/**' '!cleanroom/**' '!.oxlintrc.author.json'",
-    "test": "node --test 'test/*.test.mjs'",
+    "test": "node --import @wildshard/dev/test/node --test 'test/*.test.mjs'",
     "check:asks": "node kit/scripts/asks.mjs check",
     "check:agents": "node .githooks/agents-md.mjs lint",
     "check:parity": "node scripts/agent-parity.mjs --strict",
@@ -32,19 +32,19 @@
     "check:bin-pins": "node kit/scripts/bin-pins.mjs"
   },
   "dependencies": {
-    "@wildshard/cli": "0.4.23",
+    "@wildshard/cli": "0.4.25",
     "@wildshard/format": "npm:@wildshard/shard-format@0.66.0",
-    "@wildshard/sdk": "0.4.23",
-    "@wildshard/sharddev": "npm:@wildshard/sdk@0.4.23",
+    "@wildshard/sdk": "0.4.25",
     "three": "0.186.0"
   },
   "devDependencies": {
     "@types/node": "24.3.1",
+    "@types/three": "0.186.0",
     "@typescript/typescript6": "6.0.2",
-    "oxlint": "1.89.0",
-    "playwright": "1.65.0",
+    "@wildshard/dev": "0.4.25",
     "npm-bin-deps": "2.1.0",
-    "@wildshard/engine": "0.1.65-next.9c91846e"
+    "oxlint": "1.89.0",
+    "playwright": "1.65.0"
   },
   "pnpm": {
     "ignoredOptionalDependencies": [
@@ -131,9 +131,10 @@
     ],
     "overrides": {
       "binaryen": "npm:@pre-bundled/binaryen@132.0.0-patch-1",
-      "assemblyscript>binaryen": "npm:@pre-bundled/binaryen@131.0.0-nightly.20260721-patch-1",
-      "@wildshard/format": "npm:@wildshard/shard-format@0.66.0",
-      "@wildshard/engine": "0.1.65-next.9c91846e"
+      "assemblyscript>binaryen": "npm:@pre-bundled/binaryen@131.0.0-nightly.20260721-patch-1"
+    },
+    "patchedDependencies": {
+      "@wildshard/dev@0.4.25": "patches/@wildshard__dev@0.4.25.patch"
     }
   },
   "binDependencies": {

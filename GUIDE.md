@@ -21,12 +21,40 @@ is a command stopping with a rule id, a fix and a link into section 6.
 **Running `wildshard` today.** Install the published SDK with `pnpm add @wildshard/sdk` or
 `npm install @wildshard/sdk`, then run `pnpm exec wildshard <verb>` (or `npx wildshard <verb>`). Both work from 0.3.
 Run either in a folder with its own `package.json` (`npm init -y` makes one): in a folder without one, npm installs
-into the nearest folder above that has one, maybe your home folder. `new` writes a pnpm project, so use pnpm inside it.
+into the nearest folder above that has one, maybe your home folder (`wildshard` then warns that it runs from there).
+`new` writes a pnpm project, so use pnpm inside it.
 This guide writes `wildshard <verb>`. `wildshard --help` lists every verb;
 `wildshard <verb> --help` prints one. `wildshard --version` prints the sdk, engine, shard-format and `three` versions.
 `new` writes a `package.json` that pins `@wildshard/sdk`, shard-format, engine and `three` exactly;
 run `pnpm install` in the new project, then `pnpm exec wildshard <verb>` to use the copy it pins.
 Add npm packages of your own with `pnpm add <name>`.
+
+**The six packages.** `new` pins `@wildshard/cli` (the `wildshard` command) and `@wildshard/sdk` (what your source
+imports); the cli brings `@wildshard/build` and `@wildshard/upload` (both engine-free) and `@wildshard/dev` (the local
+game, `check`, `prove`, `watch`: the only one with the engine). `@wildshard/kit` holds shared creatures. All six share
+one version.
+
+**Install size.** A fresh `new` repo installs about 580 MB into `node_modules` (`du -sh`, cli 0.4.11 with engine
+0.1.44, measured 2026-11-18). pnpm hard-links it from its global store, so a second repo on the same sdk adds little.
+The largest parts are binaryen, the script compiler (two copies, about 200 MB), the engine (about 50 MB), then
+TypeScript, three, kit, happy-dom, sharp and rolldown (12 to 23 MB each). The first build adds about 20 MB in `public/`.
+
+Run `wildshard memory <folder>` on a built shard folder to measure its phone-tier boot with the installed engine.
+The command prints the process peak, the phone estimate and the verdict. It exits 1 above the 1.5 GB phone limit.
+
+**`npm audit` on a fresh install.** From sdk 0.3.10 it reports no high finding of the sdk's own; what is left comes
+through the engine's exact pins until its next release. Accepted, with reasons: vite 8.3.0 (high; launch-editor's
+Windows editor-open flaws and dev-server file reads; the engine pins vite 8.3.0 as a peer, and `wildshard dev` and
+`watch` listen on 127.0.0.1 only), and hono 4.13.13 and @hono/node-server 2.1.5 (moderate; the engine's game server
+pins them). The engine moves to the fixed releases; then the sdk follows.
+
+Shared creature content and author geometry live in `@wildshard/kit`. Its
+[public modules](docs/api/KIT.md) define the species, arm, pickup, body and
+weapon helpers; the SDK supplies the compiler and CLI. `wildshard update --pins`
+applies the release codemod for the moved modules and adds the matching kit pin.
+The [checked author examples](docs/api/SHARDDEV.md) show ordinary declared model
+files and item rows. Kit content is copied at build time; a running shard reads
+its own admitted files.
 
 ## 1. The loop
 
@@ -36,7 +64,7 @@ repo's one `src/shards/<slug>/`).
 
 | # | Step | Command | Today |
 |---|---|---|---|
-| 1 | Start | `wildshard new my-shard`, or `wildshard new my-shard --template scene` for a shard written as a three.js scene (section 2b) | Works, and prints the folder it made and what to run next. Writes a shard repo in `my-shard/`: the reference world (Template 1, Mossgate) as its shard source at `src/`, plus `package.json`, `tsconfig.json`, `.gitignore`, `.npmrc`, a README, this guide, the four `wildshard` skills and the agent files (`AGENTS.md`, `CLAUDE.md`, `.agents/skills/`) |
+| 1 | Start | `wildshard new my-shard` | Works, and prints the folder it made and what to run next. Writes a shard repo in `my-shard/`: Mossgate Hollow as one three.js scene module (`src/generators/world.ts`; its braziers, gates, lever, chest, rack and lift in `src/generators/play.ts`; its quests and two talks in `src/generators/quests.ts` and `gameplay.ts`; its proof tape `src/proof.json`; `pnpm watch` shows each save; section 2b) as its shard source at `src/`, plus `package.json`, `tsconfig.json`, `.gitignore`, `.npmrc`, a README, this guide, the four `wildshard` skills and the agent files (`AGENTS.md`, `CLAUDE.md`, `.agents/skills/`) |
 | 2 | Walk it | `wildshard dev .` | Works. The first run fetches engine's dev client once. See "Walking your shard" below |
 | 3 | Check | `wildshard check .` | Works: lint, build, validate, prove and the report card, one verdict |
 | 4 | Hero | `wildshard hero . --base <url>` | Works, with `wildshard dev .` running: `<url>` is the one it prints. See "The hero" below |
@@ -54,10 +82,10 @@ with `rule`, `fix` and `guide`) for agents and scripts.
 
 | Verb | What it is for |
 |---|---|
-| `wildshard new <dir> [slug] [--template sdk\|scene] [--empty]` | Start a shard repo in a folder that does not exist yet, its shard source at `src/`. The slug is the folder's name unless you give one. It copies the reference world (`--template sdk`), or Mossgate Hollow as one three.js scene module (`--template scene`: `src/generators/world.ts` is the whole world, and `wildshard watch .` shows each save); any other template refuses before writing, and `--template blender` is retired (below). `--empty` writes a bare shard source instead of the reference world |
+| `wildshard new <dir> [slug] [--template scene] [--empty]` | Start a shard repo in a folder that does not exist yet, its shard source at `src/`. The slug is the folder's name unless you give one. It copies Mossgate Hollow as one three.js scene module (`--template scene`, the default: `src/generators/world.ts` is the world, `play.ts` what the player uses in it, `quests.ts` and `gameplay.ts` its quests, talks and rack, `src/proof.json` the tape `check` plays, and `wildshard watch .` shows each save); any other template refuses before writing, and `--template sdk` and `--template blender` are retired (below). `--empty` writes a bare shard source instead of the reference world |
 | `wildshard update [dir] [--pins[=<version>]]` | Rewrite this guide and the four `wildshard` skills from the installed sdk. `--pins` first moves the repo to a newer sdk release (npm's latest, or `--pins=<version>`), installs it and applies its codemods, and runs `check` after (section 7) |
 | `wildshard dev <source>` | Serve the shard source on localhost and rebuild on every save (section 4). The first run fetches engine's dev client once ("Walking your shard") |
-| `wildshard watch <source>` | For a shard written as a three.js scene (`@wildshard/sdk/scene/shard`): serve it once, then swap each edited part into the running page in about a second, no reload. A look, ground or spawn edit still reloads. A repo `new --template scene` made runs it as `pnpm watch` |
+| `wildshard watch <source>` | For a shard written as a three.js scene (`@wildshard/sdk/scene/shard`): serve it once, then swap each edited part into the running page in about a second, no reload. A look, ground or spawn edit still reloads. A repo `new` made runs it as `pnpm watch` |
 | `wildshard check <source> [folder] [--json]` | The loop's check: lint, build, validate, prove, report card, verdict |
 | `wildshard content <folder> [--bar templates]` | Count the content in a built shard; the template bar lists every shortfall. `--bar=templates` also works |
 | `wildshard hero <source> --base <url>` | Capture the hero from a served build and stamp `hero.json`. `--stamp-existing` marks the images already there as current: only when you have looked at them and they show the current world |
@@ -68,8 +96,9 @@ with `rule`, `fix` and `guide`) for agents and scripts.
 | `wildshard delete <slug> [--yes]` | Delete your shard from the catalogue, every channel and the grid, after you type its slug (see "Deleting a shard") |
 | `wildshard build <source>` | Build alone: bake the shard source into `public/shardfiles/<slug>/` and write `public/shardfiles/<slug>.shardfile`. `wildshard build <folder>` writes the shard file of a built folder (after `prepare`) |
 | `wildshard prepare <folder> [--base <url>]` | Record the built folder in phone WebKit against engine's preparation client (or the exact engine preview `--base` names), which turns a draft into the uploadable form (see "Uploading") |
-| `wildshard validate <source \| folder>` | Shard-format's checks and the headless budget run, alone |
+| `wildshard validate <source \| folder>` | Shard-format's checks and the static budgets, alone; `check` runs the headless budget run |
 | `wildshard prove <source> <proof.json>` | Play a proof tape headlessly and print what happened ("Proof tapes" below) |
+| `wildshard prove <source> <walk.mjs> --base <url>` | Play a walk proof on a `dev` page in headless Chromium: walk to an NPC, talk, answer, fight, and assert the flags and quest steps the server says ("Walk proofs" below) |
 | `wildshard synth <source>` | Run `shard.config.ts`'s `scene` and `identity` exports (an older scene form) and write the scene as data. A `defineShard` scene shard (section 2b) needs no synth: `check` builds it and `watch` shows it |
 | `wildshard schema [list\|shardfile\|<root>] [pointer]` | Print the JSON Schema of the shard file, or of one section or field |
 | `wildshard serve` | The sharddev web app on localhost (tools for this repo, not for your shard) |
@@ -79,8 +108,8 @@ with `rule`, `fix` and `guide`) for agents and scripts.
 ### Walking your shard
 
 `wildshard dev .` walks the shard on your machine: it serves the shard on localhost and reloads the page when you
-save (section 4). Open the URL it prints; it ends in `?skipintro`, which walks straight into your shard. Ctrl-C stops
-it and frees the port.
+save (section 4). The first URL ends in `?skipintro` and walks straight into your shard. The second opens `?explore=world`
+for flying and model inspection. `wildshard watch .` prints both URLs too. Ctrl-C stops the server and frees the port.
 
 The first run fetches engine's dev client once, from the engine release at this sdk's engine pin, into
 `~/.cache/wildshard/dev-client/` (about 300 MB; `$WILDSHARD_DEV_CLIENT_CACHE` moves it). Later runs, and every project
@@ -121,8 +150,9 @@ prints what happened as JSON. The shape:
 - **`tape`**: one list per tick, 1 to 4,096 ticks (the simulation runs 60 ticks a second), each with that tick's
   commands (at most 1,024). A `player` command is the stick (`moveX`, `moveZ`, each -1 to 1) and the facing (`yaw`, in
   radians), plus a press this tick: `jump: true`, `dodge: true`, or `attack: { "targetId": "<id>" }`. An `interact`
-  command uses one of the shard's `targets.interactions` (a `world.interact` id, section 2b). `wildshard schema`
-  does not print the tape; this list is its whole shape for authors.
+  command uses one of the shard's `targets.interactions` (a `world.interact` id, section 2b), or talks to an NPC:
+  `"wren"` presses E on the talk `wren` and `"wren:accept"` picks its choice `accept` ("The proof tape" below).
+  `wildshard schema` does not print the tape; this list is its whole shape for authors.
 - **`checkpointTick`**: the tick, from 1 to the tape's length, where prove saves the cell, unloads it and loads it
   again. The player must come back where they stood, and the rest of the tape must play as it would have.
 - **`requiredFacts`**: the facts the run must file, each a quest's `onComplete.fact`, at least one, no repeats.
@@ -134,9 +164,10 @@ node -e 'const walk=[{kind:"player",moveX:0,moveZ:-1,yaw:0}];require("fs").write
 ```
 
 **Known, sdk 0.3.x:** a valid tape can still fail in the engine's save step (`traveler pose changed on restore` on a
-scene shard, `restored regional suffix diverged` when a creature is moving at the checkpoint), and a tape cannot yet
-talk to an NPC or choose a dialogue line. Both are being fixed (meta NEW-SHARD-E2E F27); until then a failing prove is not your tape's fault if
-those are its words.
+scene shard, `restored regional suffix diverged` when a creature is moving at the checkpoint); a failing prove with
+those words is not your tape's fault. A tape is input tick by tick, so walking it to an NPC means counting ticks: to
+play a quest the way a player does, by name (walk to Wren, answer "I will help."), write a walk proof ("Walk proofs"
+below) instead.
 
 ### The hero
 
@@ -149,8 +180,8 @@ hero:
 2. Run `wildshard hero . --base <url>` with the URL `dev` printed. It opens that page in headless Chromium, enters your
    shard, shoots the view `hero.json`'s `camera` names (or the spawn view), writes the three files and stamps
    `hero.json` with a hash of your content. A `data:` card becomes `card/thumb.jpg`, `card/portrait.jpg` and
-   `card/landscape.jpg`, named in both `manifest.json` and `data/card.json`. A scene shard (a `shard.config.ts` and no
-   `manifest.json`) gets the same three files; its next build's card wears them.
+   `card/landscape.jpg`, named in `data/card.json`. A scene shard (a `shard.config.ts` and no `data/card.json`) gets
+   the same three files; its next build's card wears them.
 3. Look at the three images, then stop `dev` with Ctrl-C.
 
 A refusal is one line that starts with its rule, `[hero-<rule>]`, never a stack: `hero-no-source` (no shard here),
@@ -158,12 +189,35 @@ A refusal is one line that starts with its rule, `[hero-<rule>]`, never a stack:
 `hero-card-file`, `hero-curated`, `hero-size` and `hero-page-error`.
 
 Build then refuses a shard file whose content changed after the hero was stamped (`hero-stale`), and upload refuses a
-new version whose hero is the same as the previous version's (`hero-unchanged`). Section 6 has every hero refusal.
+new version whose hero is the same as the previous version's (`hero-unchanged`). Upload, and the API, also refuse a
+shard file with no captured hero or the generated card (`hero-missing`) and a card image of the wrong size
+(`hero-size`). Section 6 has every hero refusal.
 
 **A curated hero** is hand-picked art, not a capture. Put `"curated": true` in `hero.json` and the art is kept: after a
-content change, `wildshard hero . --stamp-existing` re-stamps the images already there, and `wildshard hero . --base`
+content change, `wildshard build` re-stamps `hero.json` itself when the images are the stamped ones (commit the new
+stamp), `wildshard hero . --stamp-existing` re-stamps swapped images, and `wildshard hero . --base`
 refuses rather than shoot the spawn view over them. A new version still needs a new picture (`hero-unchanged`): swap
 the art, then `--stamp-existing`. Remove `curated` to capture again.
+
+### Reading a browser proof
+
+A staging MMO page keeps authoritative quests and creatures in its worker client. Use the engine's shared reader in
+a Playwright proof (the same reader serves local `wildshard dev`):
+
+```js
+import { readProofState } from '@wildshard/engine/scripts/proof-state.mjs';
+const state = await page.evaluate(readProofState, { creatureKinds: ['boar'] });
+if (!state) throw new Error('Enter the shard before reading gameplay');
+console.log(state.quest.flags, state.quest.quests, state.creatures, state.seat);
+```
+
+Request the creature kinds your walk checks; the reader uses live worker rows for those kinds. `quest.flags` combines
+shared and player flags; `quest.quests` contains the player's quest progress (including a null `step` when complete).
+The local probe's original quest fields are retained. `seat` includes the server's cell number, instance, slug and the
+page's visual `inside` cell, so a crossing can distinguish them. Wire cells are one-based; zero means the road on a
+grid page. An unmapped seat says `unknown`, never a guessed slug. Without a worker, local probe creatures and quests
+are retained; without its dev net reader, the worker report still supplies flags and quest steps (`phased` is null
+because that report combines the two flag scopes). This is observation only: no flags, quests or creatures are changed.
 
 ### The proof tape
 
@@ -185,8 +239,9 @@ the art, then `--stamp-existing`. Remove `curated` to capture again.
 }
 ```
 
-- **`player`** moves the player this tick (`moveX`, `moveZ` from -1 to 1, `yaw` in radians). `moveZ: -1` walks
-  forward, and at `yaw` 0 forward is −z, as W on the page.
+- **`player`** moves the player this tick (`moveX`, `moveZ` from -1 to 1, `yaw` in radians). The stick is world
+  space: `moveX: 1` walks towards +x and `moveZ: -1` towards −z whatever the `yaw`, which turns only the facing (the
+  page turns W by the camera before it sends the stick). A diagonal leg is both: `moveX: 0.7, moveZ: -0.7`.
 - **`interact`** presses E. Its `id` is one of `targets.interactions`, or a talk: `"wren"` presses E on the talk
   `wren` (it closes a line with no choices), and `"wren:accept"` picks the choice `accept` of the node the player
   stands at. The player must be within the talk's `radius`, as on the page. An `id` that names nothing refuses with
@@ -194,10 +249,60 @@ the art, then `--stamp-existing`. Remove `curated` to capture again.
 - **`requiredFacts`** are the quest facts (`onComplete.fact`) the tape must file. **`requiredItems`** (optional) are
   the stacks the player must hold when the tape ends, at least this many of each, counted across every pack.
 - The report's `inventory` lists every pack's stacks when the tape ends; `ledger.facts` lists the facts filed. A scene
-  or data shard's player holds what the tape was paid under `player`: `coins` from quest `onComplete.coins` and kills,
+  or shard's player holds what the tape was paid under `player`: `coins` from quest `onComplete.coins` and kills,
   each kill's roll off the shard's loot tables by item, and the ledger's item rewards. A native shard's own packs
   appear under their own ids (`pack`).
 - `checkpointTick` is where the proof saves, unloads and restores the shard mid-tape; it must fall inside the tape.
+
+### Walk proofs
+
+A walk proof plays your shard on a `dev` page the way a player does, by name instead of by tick: walk to Wren, press
+E, answer "I will help.", kill the bear, and check what the server then says. It is a small script, say
+`proof/honey-thief.walk.mjs`, whose default export gets the walk helpers:
+
+```js
+// The honey thief: Wren's talk, the bear, three hives, the turn-in.
+export default async function honeyThief({ talk, choose, fight, expectFlags, expectQuest }) {
+  await talk('wren');                  // walk to the talk, press E, wait for its box
+  await choose('accept');              // a choice by its id ...
+  await expectFlags(['honey.met']);
+  await expectQuest('honey-thief', 'bear');
+  await fight('honey-bear');           // a spawn id (or a species kind), until none is alive
+  for (const hive of ['hive-1', 'hive-2', 'hive-3']) {
+    await talk(hive);
+    await choose('Gather a honeycomb.'); // ... or by its words on screen
+  }
+  await talk('wren');
+  await choose('three honeycombs');    // ... or a part of them, any case, when only one answer has it
+  await expectFlags(['honey.returned', 'honey.complete']);
+  await expectQuest('honey-thief', 'complete');
+}
+```
+
+Run `wildshard dev .`, then, in a second terminal, `wildshard prove . proof/honey-thief.walk.mjs --base <the URL dev
+printed>`. It opens the page in headless Chromium (muted, 60 fps, no window), enters your shard as a new player, runs
+the script and prints a JSON report: the verdict, each step with its time and what it saw (the talk's node and the
+answers it offered, the swings a fight took), and the server's flags and quest steps at the end. Exit 0 is a pass.
+`check` does not run walk proofs: they need a `dev` page. A page error during the walk fails it.
+
+- **`talk(id)`** walks to the talk (`targets.talks`), presses E and waits for its dialogue box. It returns the node
+  the server put this player at and the answers the box offers, each with its choice id and label.
+- **`choose(answer)`** picks an answer of the open talk by its choice id, its label, or a part of one label (any
+  case), presses its number, and waits for the server to move the talk to its next node. Two choices may share a
+  label; the one your flags let the page offer is the one picked.
+- **`walkTo(target, reach)`** walks to a talk, an interaction or a spawn by id, or to `{ x, z }`, within `reach`
+  metres (1.5 unless given). The page's server moves the player; the walk holds W and steers.
+- **`fight(target)`** walks to the nearest live creature of a spawn's species (or a species kind) and swings until
+  the server shows none alive.
+- **`expectFlags(all, none)`** waits until the server says the player has every flag in `all` and none in `none`;
+  **`expectQuest(id, step)`** waits until the quest is at `step`: a step id, `unstarted` or `complete`. Each waits
+  up to 8 s for the server.
+- **`state()`** reads the server's word for the player now (position, `hp`, `kills`, `flags`, `quests`), and
+  **`page`** is the Playwright page, for anything else.
+
+Every refusal says what the page showed instead: `talk wren at node hello has no answer "three honeycombs" now; it
+offers: accept ("I will help.")`, `flags: missing honey.bear-dead; the server says: honey.met`, `quest honey-thief is
+at gather, not return`. Walk it by hand in `dev` to see which step did not happen.
 
 ### Uploading
 
@@ -248,7 +353,7 @@ wildshard upload status <upload-id> --server https://api.wildshard.io
 The status command needs no shard file, version or channel. An older API
 without async status retains the immediate `committed:` behavior.
 
-**First-party shards upload from GitHub Actions.** A `project-wildshard/shard-*` repo carries repo-kit's
+**Built-in shards upload from GitHub Actions.** A `project-wildshard/shard-*` repo carries repo-kit's
 `.github/workflows/publish.yml`, which does steps 3, 4 and 6 on a hosted runner with the org's secrets, so no laptop
 needs a key. Commit and push the hero first (steps 1 and 2), wait for `ci` on `main` to go green, then:
 
@@ -283,12 +388,13 @@ A project made by `wildshard new` is a repo with one shard source at `src/`. Ins
 | Path | What it is | Ships in the shard file? |
 |---|---|---|
 | `shard.config.ts` | The build entry: exports `generate` (default) and `buildOptions`. Build runs it | No: its output does |
-| `data/` | JSON rows: identity (`data/identity.json`, the slug), card, layout, creatures, items, quests, text, audio, look, budgets (`data/budgets.json`) | As baked sections, never as code |
-| `generators/` | TypeScript that runs at build time (any Node package, J319) to make terrain, props, maps and sections | No: what they produce does |
+| `data/` | JSON rows: identity (`data/identity.json`: slug, name, author, revision, seed), card, layout, creatures, items, quests, text, audio, look, budgets (`data/budgets.json`) | As baked sections, never as code |
+| `generators/` | TypeScript that runs at build time (any Node package, J319). In the Template, `scene.ts` is the world as a three.js scene module (its parts are what `wildshard watch` swaps) and `generate.ts` puts the gameplay rows over it | No: what they produce does |
+| `sources/` | Programs that made a committed asset (the Template's Warden skin); build never runs them | No: the asset does |
 | `behaviour/` | AssemblyScript (`.as`) scripts and `hooks.json`. Build compiles them to Wasm | The compiled Wasm |
 | `assets/` | Source assets, named by their SHA-256 | The ones the shard uses, by hash |
 | `look/` | Recorded entry reads for the build | No |
-| `manifest.json` | The card and discovery fields: name, `card` images, `shardfile` path | The card, as data |
+| `data/card.json` | The card and discovery fields: name, `card` images, `shardfile` path | The card, as data |
 | `hero.json` | The hero stamp (`wildshard hero` writes it) | No |
 | `proof.json` | Optional: a proof tape `check` plays with `prove` | No |
 | `audio-waiver.json` | Optional: a dated waiver for the audio budget | Into the shard file's admission data |
@@ -306,8 +412,8 @@ At the repo root, around `src/`:
 | `AGENTS.md`, `CLAUDE.md` | For agents: read this guide first; the skills are in `.claude/skills/`. `CLAUDE.md` is `@AGENTS.md`, so Claude Code reads the same file. Yours to change: `update` keeps your edits | No |
 | `public/shardfiles/` | Build output: the built folder and `<slug>.shardfile`. Never edit; never commit | It is the shard file |
 
-**Two files to change together.** `src/manifest.json` and `src/data/card.json` hold the same card: `new` writes
-both, build refuses a shard whose two copies differ, and hero capture reads `manifest.json`, so change both together.
+**The card is `src/data/card.json`.** It names the shard (slug, name, status, card art) and is its one home: `new`
+writes it, build reads it, and hero capture writes the captured slots into it.
 
 Blender files (`.blend`), mockups and other working files never ship: keep them in a folder of your own, such as
 `blender/`, and export what the shard needs into `assets/`. A shard never ships runtime TypeScript: everything that
@@ -324,7 +430,7 @@ build supplies: `shared(i)` and `player(i)` read state fields in their declared 
 **Repo layout (J317).** A repo with one shard keeps its shard source at `src/` (`src/shard.config.ts`,
 `src/data/`, ...); a repo with several keeps `src/shards/<slug>/`. Commands take the repo (`.`) and find the shard
 source at `src/`, or at the one `src/shards/<slug>/` a repo holds; in a repo with several, name the shard source
-(`src/shards/<slug>`). The slug is `manifest.json`'s, whatever the repo folder is called. A `src/` source builds
+(`src/shards/<slug>`). The slug is `data/card.json`'s, whatever the repo folder is called. A `src/` source builds
 into the repo's `public/shardfiles/`; a `src/shards/<slug>/` source into its own folder's. SA24 moves the existing
 single-shard repos to `src/`.
 
@@ -333,6 +439,26 @@ single-shard repos to `src/`.
 hand-written template (`new --template blender`, a shard file folder held by hand) is retired, and `new` refuses it.
 A repo started that way before still checks and uploads: `wildshard check .` packs and validates its `src/` folder as
 it always did.
+
+**Imported creature chains.** `importCreatureGlb` from `@wildshard/sdk/scene/creature-import` accepts
+one skinned GLB and `{ skeleton: 'biped', map: 'mixamo' }` (or `'rigify'`). A custom map supplies
+`root` and a `chains` object: each defining chain name maps to source bone names in chain order.
+The presets use `Armature` / `root` as their body root; a root outside the skin is added as a joint
+with remapped weight indices. Mixamo names accept the `mixamorig:` or `mixamorig` prefix.
+The importer keeps mesh weights, clip targets and attachment parents, while emitting canonical names
+and full ordered joint metadata through `creatureSkin`. Missing, duplicate or detached chains name
+the failing chain. Inputs use translation-only, unit-scale inverse binds and at most 32 final joints;
+bake bind rotations/scales in the source tool. Read source bytes through `ctx.cached` and return the
+compiled GLB in generated output assets. Kit skeleton/body helpers are a separate build step.
+
+**Creature hit markers.** For a creature's `platform.skin` look, parent an empty named `hit.<part>` under a skin
+bone in Blender. Its translation becomes the bone-local offset. Export custom properties as extras: `radius`
+(default 0.3), `shape` (`sphere` or `capsule`), `halfLength`, `axis` (`y` or `z`) and `multiplier` (head defaults to 2,
+other parts to 1; 0 makes a shield). Keep marker scale positive and uniform; capsule axes align with the bone's Y
+or Z axis. Build and the handwritten pack step copy these into `body.volumes`, with at most 16 resolved parts.
+Explicit row volumes override the same named markers. Variants must resolve to the same volume rows; override a
+part explicitly when their markers differ. The GLB bytes stay unchanged. The engine clamps each final scaled
+radius to at least 0.3 metres, so a tiny authored radius remains hittable.
 
 **What a shard may declare.** The runtime contract lists every section, `client/plan` kind, named file, script rule,
 budget and limit a shard file may carry, and what validation refuses:
@@ -344,18 +470,36 @@ scripts) and [`PLATFORM-FILE-FAMILIES.md`](https://github.com/project-wildshard/
 
 ## 2b. A scene shard
 
-A shard can also be one three.js scene, written in TypeScript: `wildshard new my-shard --template scene` makes one
-(Mossgate Hollow, under your slug). It is the same shard format as section 2; only the source is shorter. It needs no
-`manifest.json` and no `data/` rows: `defineShard` takes the slug and name, the scene builds the world, and build
+A shard can also be one three.js scene, written in TypeScript: `wildshard new my-shard` makes one (Mossgate Hollow,
+under your slug; J434 made it the starter). It is the same shard format as section 2; only the source is shorter. It needs no
+`data/card.json` and no `data/` rows: `defineShard` takes the slug and name, the scene builds the world, and build
 writes the rest. `wildshard check .` builds it, `wildshard watch .` shows each saved edit in a running page, and
 `wildshard synth` is not for it (synth takes the older scene form only).
+
+**Mossgate's files: a file per region, a section per mechanic (MZ25).** The starter is a whole zone, and each file is
+under 400 lines, so a region or a mechanic is one file to read and one to change:
+
+| File | What it holds |
+|---|---|
+| `generators/layout.ts` | The cell map: the six regions round the yard, the twelve places, the entry roads and the paths |
+| `generators/ground.ts`, `hollow.ts` | The ground over the 500 m cell, each region's relief and tint; the yard's `LAYOUT` and the pond's shape |
+| `generators/world.ts` | The scene's order: the light, the ground and every yard part (`buildMossgate`) |
+| `generators/kit.ts` | Shared materials and builders: blocks, moss caps, drapes, ivy, lanterns, halos, colliders, stencils |
+| `generators/yard.ts`, `garden.ts` | The Hollow yard: walls, paths, braziers, hut, crate, signpost, moss gate, the Lamplighter; the pond, trees, boulders, ferns, grass, fireflies |
+| `generators/meadow.ts`, `thicket.ts`, `bog.ts`, `quarry.ts`, `ridge.ts`, `downs.ts`, `ring.ts` | One region each: Mossling Meadow, Greyback's Thicket, the Bog, the Old Quarry, Lookout Ridge, the Barrow Downs and its ring |
+| `generators/places.ts` | The twelve places as region triggers and fingerposts |
+| `generators/cover.ts` | Each region's ground cover, one detail layer a region: flowers, ferns, reeds, pale grass, rubble, heather |
+| `generators/play.ts` | What the player uses: braziers, gates, lever, chest, rack, lift, and the order every part is built in (`buildHollow`) |
+| `generators/creatures.ts`, `fights.ts`, `behaviour/*.as` | Bodies and camps; brains, packs, encounters and the boss and elite decision scripts |
+| `generators/quests.ts`, `gameplay.ts` | The main chain, the side quests, the talks and the achievements (`extend`) |
+| `generators/finds.ts` | The lamp-glass set, the cairn's chest, the lore signs |
 
 **Which files a scene shard keeps.** Only `src/shard.config.ts` and the modules it imports. `--template scene` writes
 four: `shard.config.ts`, `identity.json` (slug, name, author, revision, seed), `generators/shard.ts` (`defineShard`)
 and `generators/world.ts` (the scene), with `generators/sky.ts` and `generators/textures.ts` beside it. To turn a repo
 `new` made from the reference world into a scene shard, replace `src/shard.config.ts` with one like the one below and
-delete everything else under `src/`: `manifest.json`, `data/`, `behaviour/`, `assets/` and the reference's
-`generators/` are the data shard's and a scene shard reads none of them. Keep the repo files around `src/`
+delete everything else under `src/`: `data/` (the card included), `behaviour/`, `assets/` and the reference's
+`generators/` are the shard's and a scene shard reads none of them. Keep the repo files around `src/`
 (`package.json`, `.oxlintrc.author.json`, this guide).
 
 The smallest one, `src/shard.config.ts`:
@@ -369,12 +513,10 @@ export default defineShard({ slug: 'meadow', name: 'Meadow' }, (world) => {
   // a low knoll, flat (height 0) from 120 m out, so every entry road meets the next cell at 0
   world.ground((x, z) => 6 * Math.max(0, 1 - Math.hypot(x, z) / 120) ** 2, { colourAt: () => [0.32, 0.5, 0.2] });
   const stone = new THREE.MeshStandardMaterial({ color: '#8a8378', roughness: 0.9 });
-  const hut = world.part('hut', (part) => {
-    const walls = solid(new THREE.Mesh(new THREE.BoxGeometry(6, 3, 6), stone));
-    walls.position.set(0, 5.6, -20); // the knoll is 4.2 m high here; the walls are 3 m
-    part.add(walls);
-  });
-  world.trigger('meadow.hut', hut.children[0]!, { radius: 8, flag: 'meadow.hut' });
+  const walls = solid(new THREE.Mesh(new THREE.BoxGeometry(6, 3, 6), stone));
+  walls.position.set(0, 5.6, -20); // the knoll is 4.2 m high here; the walls are 3 m
+  world.part('hut', (part) => { part.add(walls); });
+  world.trigger('meadow.hut', walls, { radius: 8, flag: 'meadow.hut' });
   world.spawn(0, 7, 10, 0); // ground 5 m here; yaw 0 faces -z, towards the hut
 });
 ```
@@ -384,7 +526,13 @@ export default defineShard({ slug: 'meadow', name: 'Meadow' }, (world) => {
 
 **The entry roads.** Players walk in from the next cell by a road at the middle of each cell edge. Within 6 m of the
 middle of each edge the ground must be exactly 0 m high, so the road meets the next cell; check refuses a shard
-whose ground is not ("Terrain entry road must meet road height zero").
+whose ground is not ("Terrain entry road must meet road height zero"). Two more rules cover the road's approach, and
+check refuses those too: the first 15 m in from each edge, 8 m wide, must be exactly 0 m over every ground triangle it
+touches ("baked entryway footprint must be flat at road height y=0"), and the engine walks each road 50 m in, so for
+50 m the ground must stay within 0.15 m of 0, flat, dry and free of colliders ("Blocked edge entry north lane 0 at
+34.40m"). Easiest: blend your ground to exactly 0 for the last 50 m before each edge's middle and a few metres to each
+side, as `h = lerp(h, 0, smooth(186, 197, r) * (1 - smooth(9, 18, Math.min(Math.abs(x), Math.abs(z)))))` does with
+`r = Math.hypot(x, z)`.
 
 **What `world` takes.**
 
@@ -396,14 +544,429 @@ whose ground is not ("Terrain entry road must meet road height zero").
 | `world.spawn(x, y, z, yaw)` | Where a player enters |
 | `world.trigger(id, object, { radius, flag })` | Entering `radius` metres of `object` sets quest flag `flag` |
 | `world.interact(id, object, { label, radius, scene })` | A use prompt that runs a shard scene |
+| `world.interact(id, object, { label, radius, sets })` | A use prompt that sets a state field, no script needed: `sets: { field, scope: 'shared' \| 'player', value }` or `{ field, scope, add, max }` (a count). A shared use's prompt goes once the field holds what it would write |
+| `world.part(name, build, { panel, shownWhen: { field, equals } })` | A panel shown (and solid) only while a field a `sets` prompt writes holds `equals`: a shrine's flame once it is lit. A `player` field's panel is that player's alone (their socket): never solid, and shown on their page by an engine with SHARD-SOURCE SS-GF1a2 |
+| `world.vehicle(kind, build, { speed, ... })`, `world.dock(id, object, { kind, per?, respawn? })` | A vehicle kind players get into, drive and leave, and where one stands (format `world/vehicles`); see *Vehicles* below. `world.part`'s old `vehicle` option is refused |
+| `world.pickup(id, at, { label, radius, item: { id: 'tool.<name>', name, colour?, intensity?, fuelSeconds? }, flag? })` | A lantern on a stand: using its prompt puts the tool in the player's kit lit and full, and raises `flag`; a later use refills it. The sdk writes the tool, the take and the fields that show its light. Two pickups may hand over one tool (same options). Needs an engine with SHARD-SOURCE SS-GF1a1a |
 | `world.detail(id, instancedMesh, { cell, radius })` | Grass and small clutter the engine scatters near the camera |
+| `world.music({ day, night?, boss? })`, `world.ambience({ winds })` | The shard's score from the engine's own piano slots (`title`, `island`, `pine`; no audio bytes, J304), by day, by night and while a boss fights, and a synth wind bed; either ends the scene's default silence, so quest steps are heard (format `audio`) |
+| `world.spawnAt(id, object, { species, variant, brain, strike, seed, scale, rank?, count?, when? })` | A creature spawn row (`creatures.spawns`) at `object`'s world position, facing its +z; a boss is a spawn its encounter names by `id` |
+| `world.creature(id, group, { species, size, scale?, skeleton?, volumes?, lock?, hits?, clips?, loops, material, materials?, family?, sockets?, attackSpan?, strikes? })` | A whole creature from a `Group` of named bone nodes built outside `world.scene`: its skinned GLB rig (each mesh rides its nearest bone, `clips` kept; one skinned mesh, a primitive per material, at most 8 materials), its skin in the library, the species row `id` and look `<id>.look`, and `strikes`, the strike rows its abilities name; 64 bones at most, at most 32 `sockets` (default every bone). Place it with `world.spawnAt(…, { species: id, … })`. The build also writes its phone mesh (half the vertices within 1% of its radius; the shard file option `creaturePhone` tunes it, `false` skips it), which the phone tier draws from the same clips; `wildshard content` lists its bones and both triangle counts |
 
 From `@wildshard/sdk/scene/author`: `solid` (collides), `paint` (a texture from a function), `Water` (a water
 surface), and `animate` with `flicker`, `pulse`, `drift`, `rise`, `sway` and `uvScroll`.
 
+**Vehicles.** A vehicle is a *kind* (`world.vehicle`) and the *docks* it stands at (`world.dock`), written as the
+shard's `world/vehicles` section (MIRROR-SALT-ZONE MSZ1 to MSZ5; `src/shards/vehicles/` is the worked example).
+
+```ts
+import * as THREE from 'three';
+import { solid, type ShardWorld } from '@wildshard/sdk/scene/author';
+
+const red = new THREE.MeshStandardMaterial({ color: '#b5402a' });
+
+/** Built about its own origin, its base at y 0, facing -z. */
+function buggy(part: THREE.Group): void {
+  const tub = solid(new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.7, 3.4), red));
+  tub.position.set(0, 0.75, 0);
+  part.add(tub);
+  const driver = new THREE.Object3D();
+  driver.name = 'seat.driver';
+  driver.position.set(-0.45, 0.9, 0.3);
+  const passenger = new THREE.Object3D();
+  passenger.name = 'seat.passenger';
+  passenger.position.set(0.45, 0.9, 0.3);
+  part.add(driver, passenger);
+}
+
+export function build(world: ShardWorld): void {
+  world.vehicle('salt.buggy', buggy, { speed: 22, reverse: 6, accel: 9, grip: 0.8, labels: { drive: 'Drive the buggy' } });
+  const yard = new THREE.Object3D();
+  yard.position.set(-6, 0, 20);
+  world.scene.add(yard);
+  world.dock('yard.buggy', yard, { kind: 'salt.buggy' });
+}
+```
+
+- **Seats.** Empties named `seat.driver` (exactly one) and `seat.passenger` (or `seat.passenger.2`, up to four seats in
+  all) are where riders sit; `pose: 'stand'` stands them (a sail's deck). `leave.driver` and `leave.passenger` are where
+  getting out sets them down; without one, a rider steps out 0.8 m past the side they sit on.
+- **Hull.** The kind's `solid()` meshes, at most 16 boxes each at most 8 m from its centre to a face: they ride the
+  vehicle and stop anyone on foot, never its riders. A kind's panel is written hidden: the engine poses it at each dock.
+- **Handling, and what the numbers feel like.** `speed` is the top speed in m/s (a run is 6, the hoverboard 14, a buggy
+  20 to 25, at most 60); `reverse` its top speed backwards (default the lesser of 6 and `speed`); `accel` how fast it
+  gets there (default 6 m/s²: 0 to 22 m/s in under 4 s at 9) and `brake` how fast it stops (default twice `accel`);
+  `turn` the radians a second at full stick (default 1.2: a full circle in about 5 s); `grip` from 0 (ice) to 1 (rails,
+  default 0.9) and `drift` how long a slide lasts (0 to 1, default 0.3); `boost` the sprint multiplier (1 to 4, default
+  1.5); `mass` in kg (default 500), which decides who gives way in a crash; `ground: false` keeps it at its dock's height
+  (a boat on still water); `wind: { toward: [x, z], push }` pushes a sail up to `push` m/s along its heading.
+- **Surface grip.** `world.vehicleSurface({ base, patches })` multiplies the kind's grip under the vehicle. A patch is a
+  `{ shape: 'circle', at: [x, z], radius, grip }` or a `{ shape: 'road', line: [[x, z], ...], width, grip }`. Use cell-local
+  metres and multipliers between 0 and 1. The last covering patch wins, so list a road after a flood to keep the road's grip.
+- **Docks.** `world.dock(id, object, { kind })` stands one at `object`'s world position, facing its -z. `per: 'player'`
+  (the default) gives each player their own, gone 60 s after they leave it; `per: 'shared'` parks one for everyone.
+  `respawn` (default 60 s) is how soon it comes back. A dock stands on the ground, clear of solids, with every leave
+  point on the ground and outside its hull, or the build (and `wildshard check`) refuses it.
+- **Sounds and health.** `sounds: { loop, skid, impact, horn }` name `audio.cues` ids; `health` (1 to 100,000) lets
+  crashes wear it down. `labels: { drive, ride, leave }` word its prompts.
+- **Limits.** At most 8 kinds and 32 docks a shard. `wildshard content` counts kinds, seats and docks. Driving needs an
+  engine that reads `world/vehicles` (MSZ6 and later); until its vehicle runtime (MSZ8) it runs each dock as a one-seat
+  steer carry.
+
 **Items and quests.** Every player starts with the Template's iron sword (`weapon.sword-iron`), so a scene shard
 needs no item rows to fight. To add quests, items or any other section, pass `{ extend: (shard) => ({ ...shard,
-quests: ... }) }` as `defineShard`'s third argument; `wildshard schema list` names every section and its shape.
+quests: ... }) }` as `defineShard`'s third argument; `wildshard schema list` names every section and its shape. An NPC
+with a quest and loot, every row and how they connect, is worked through below (*An NPC with a quest and loot*).
+
+**A boss's decision script.** A boss encounter (added through `extend`) runs an AssemblyScript decision script: put the
+source in `behaviour/<name>.as` beside `shard.config.ts`, pass its `sim/scripts` row as `defineShard`'s `decisions`
+(`{ extend, decisions: [row] }`; the row names its `source`, its `binding.encounter` and the strikes and fields it
+drives), and cap its length with `export const buildOptions = { asLineCeiling: 100 }` in `shard.config.ts`. The build
+compiles it. The starter's Barrow Warden is the worked example: `generators/fights.ts` and `behaviour/warden.as`. A
+script that moves its actor (burrow, relocate, surface, leap) declares those moves as `moves` (`actors/moves` rows) and
+the spots they land on as `spots` (`world/targets` spots, `{ id, at: [x, y, z], yaw }`), beside `decisions` in the same
+options; Brasscap's Dust Wyrm is the worked example.
+
+**A creature, from rows to a kill.** A scene shard's creature is one `world.creature` call (its body, skin, species
+row, look row and the strike rows its abilities name) and a `world.spawnAt` per creature. Jackal
+Den has two jackals that bite; the whole `src/shard.config.ts` (`src/sharddev/guide/scene-creature.example.ts` in the
+sdk, built by its tests):
+
+```ts
+// Jackal Den: a scene shard with a creature, from rows to a kill. `world.creature` turns a Group of named bones into
+// the jackal's skinned body, its skin, its species and look rows, and the bite its ability names; `world.spawnAt`
+// places two. Every player holds the starter sword, so the jackals can be fought and killed.
+import * as THREE from 'three';
+import { abilities, temperament } from '@wildshard/kit';
+import { defineShard } from '@wildshard/sdk/scene/shard';
+
+const bite = abilities.bite({ id: 'jackal.bite', damage: 9, range: 1.6 });
+const { temperament: pursue, senses } = temperament.pursue({ aggro: 16, leash: 30 });
+
+/** The jackal's body: a `body` bone carrying a `head` and a `tail` bone, a box on each (each mesh rides its bone). */
+function jackalBody(): THREE.Group {
+  const fur = new THREE.MeshStandardMaterial({ color: '#b08850' });
+  const root = new THREE.Group(), body = new THREE.Group(), head = new THREE.Group(), tail = new THREE.Group();
+  body.name = 'body'; head.name = 'head'; tail.name = 'tail';
+  body.position.set(0, 0.5, 0); head.position.set(0, 0.1, 0.5); tail.position.set(0, 0.05, -0.45);
+  body.add(new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.3, 0.9), fur), head, tail);
+  head.add(new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.2, 0.3), fur));
+  tail.add(new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, 0.35), fur));
+  root.add(body);
+  return root;
+}
+
+/** A one-second clip that dips the head by `angle` radians and back: idle, walk and the bite's lunge. */
+function nod(name: string, angle: number): THREE.AnimationClip {
+  const dip = [Math.sin(angle / 2), 0, 0, Math.cos(angle / 2)];
+  return new THREE.AnimationClip(name, 1, [new THREE.QuaternionKeyframeTrack('head.quaternion', [0, 0.5, 1], [0, 0, 0, 1, ...dip, 0, 0, 0, 1])]);
+}
+
+export default defineShard({ slug: 'jackal-den', name: 'Jackal Den' }, (world) => {
+  world.ground(() => 0, { colourAt: () => [0.7, 0.6, 0.4] });
+  world.spawn(0, 1, 10, 0);
+  world.creature('jackal', jackalBody(), {
+    species: {
+      kind: 'jackal', label: 'Dune jackal', type: 'beast', aggressive: true, lockable: true,
+      dims: { bodyY: 0.5, bodyHalfLen: 0.45, bodyRadius: 0.22, headRadius: 0.12, legLen: 0.42, feet: [], halfWidth: 0.18 },
+      variants: [{ id: 'tawny', label: 'Tawny jackal', rarity: 'common', weight: 1, scale: [0.9, 1.1], hp: 40,
+        mods: { speed: 1, chargeDist: 1, damageTaken: 1, chargeDamage: 0, relentless: false } }],
+      temperament: pursue, senses, abilities: [bite.ability],
+    },
+    strikes: [bite.strike],
+    size: 'small',
+    clips: [nod('idle', 0.1), nod('walk', 0.3), nod('attack', 0.6)],
+    loops: ['idle', 'walk'],
+    material: { family: 'pbr', vertexColours: true },
+  });
+  // a spawn faces its marker's +z: these two face the player, 22 m north of them
+  for (const [index, x] of [-4, 4].entries()) {
+    const den = new THREE.Object3D();
+    den.position.set(x, 0, -12);
+    world.scene.add(den);
+    world.spawnAt(`jackal-${index + 1}`, den, { species: 'jackal', variant: 'tawny', brain: null, strike: null, seed: index + 1, scale: 1 });
+  }
+});
+```
+
+- **The body** is a `Group` of named bone nodes (`body`, `head`, `tail`; every creature has a `body` and a `head`),
+  built outside `world.scene`, each mesh on its bone. `clips` animate the bones by name: `idle`, `walk` and `attack`
+  play from the creature's state; `loops` are the ones that repeat. A kit skeleton (`skeleton: 'quadruped'`) instead
+  takes the kit's bones and default hit volumes.
+- **The species row** is section 2c's, without `id` and `body`: `world.creature` writes those (its id, its size and
+  the look `jackal.look`). `abilities` name strikes by id; pass those strike rows as `strikes` and they go in
+  `rows.strikes` (two creatures may pass the same row). The kit's `abilities.bite` makes both halves.
+- **The spawns** are `creatures.spawns` rows: `brain: null` and `strike: null` keep the species' own temperament and
+  abilities; `variant` is one of its variants.
+- **The kill.** Every player holds the starter sword. Prove the fight with a walk proof (section 1, *Walk proofs*),
+  `proof/jackals.walk.mjs`:
+
+```js
+// Jackal Den: kill both jackals, then read the server's kill count.
+export default async function jackals({ fight, state }) {
+  await fight('jackal');               // the species kind: swings until no jackal is alive
+  const { kills } = await state();
+  if (kills < 2) throw new Error(`two jackals, but the server counts ${kills} kills`);
+}
+```
+
+  Run `wildshard dev .`, then `wildshard prove . proof/jackals.walk.mjs --base <the URL dev printed>`. A quest that
+  waits on the kill reads it the same way: a `kill` objective on species `jackal`, added through `extend`
+  (`wildshard schema shardfile /quests`).
+
+**An NPC with a quest and loot.** An NPC is a talk (`targets.talks`: where it stands, how near the player must be,
+its prompt) that opens a dialogue tree (`quests.dialogue`). A quest (`quests.quests`), a trigger (`quests.triggers`),
+the item catalogue (`items.catalogue`) and a loot table (`rows.loot`) go in through `extend`. They connect by name:
+choices, triggers and quest steps read and set flags, and every flag is declared once in `quests.flags`. Wren's Hives
+is the whole `src/shard.config.ts` (`src/sharddev/guide/npc-quest.example.ts` in the sdk, built by its tests):
+
+```ts
+// Wren's Hives: an NPC with a quest and loot, and how their rows connect. Everything joins on flag names: Wren's
+// `accept` choice sets `wren.met`, which starts the quest; the badger's death trigger sets `wren.badger-dead`, which
+// finishes its first step and opens her turn-in choice; that choice sets `wren.returned`, which finishes the quest. The
+// quest pays coins, and each badger kill rolls a honeycomb off the shard's loot table (an item its catalogue names).
+import * as THREE from 'three';
+import { abilities, temperament } from '@wildshard/kit';
+import type { Shardfile } from '@wildshard/format/shardSchema';
+import { defineShard } from '@wildshard/sdk/scene/shard';
+
+const WREN_AT = [-6, 0, 4] as const;
+const bite = abilities.bite({ id: 'badger.bite', damage: 6, range: 1.4 });
+const { temperament: pursue, senses } = temperament.pursue({ aggro: 12, leash: 24 });
+
+// 1. Flags: every name a choice, trigger or quest reads or sets is declared once here.
+const flags = ['wren.met', 'wren.badger-dead', 'wren.returned', 'wren.done'];
+
+// 2. The NPC is a talk (`targets.talks`, below) that opens this dialogue tree. A choice shows while its `when` holds
+//    and sets its `sets` flags; `next: null` ends the talk.
+const wren = { id: 'wren', name: 'Wren the beekeeper', start: 'hello', nodes: [
+  { id: 'hello', lines: ['A honey badger is in my hives. Drive it off and I will pay you.'], choices: [
+    { id: 'accept', label: 'I will help.', next: 'waiting', when: { none: ['wren.met'] }, sets: ['wren.met'] }] },
+  { id: 'waiting', lines: ['The badger digs by the hives, north of here.'], choices: [
+    { id: 'turn-in', label: 'The badger is gone.', next: null, when: { all: ['wren.badger-dead'] }, sets: ['wren.returned'] }] },
+] };
+
+// 3. The quest starts when `startWhen` holds; each step is done when its flags are; `completeFlag` is raised at the
+//    end, and `onComplete` pays the coins and files the fact a proof tape's `requiredFacts` names.
+const quest = { id: 'honey-badger', title: 'The honey badger', track: true, completeFlag: 'wren.done', startWhen: { all: ['wren.met'] },
+  steps: [
+    { id: 'badger', objective: 'Drive the badger from the hives.', done: { all: ['wren.badger-dead'] } },
+    { id: 'return', objective: 'Tell Wren the badger is gone.', done: { all: ['wren.returned'] } },
+  ],
+  onComplete: { fact: 'wren.paid', coins: 10 } };
+
+// 4. A death trigger raises its flag when a creature carrying `tag` dies: every creature carries `creature.<kind>`.
+const badgerDead: Shardfile['quests']['triggers'][number] = { id: 'badger-dead', kind: 'death', flag: 'wren.badger-dead', tag: 'creature.badger' };
+
+// 5. Loot: a `trophies` table rolls items on each kill, matched by the creature's `kind`; a `coins` table would pay
+//    coins the same way. The rest of the economy row is empty: no effects, goods, grants, finds or map marks.
+const loot: Shardfile['rows']['loot'][number] = { id: 'wren.loot', gear: 'purse.coins', finds: null, marks: null, charted: false, chime: 'coin',
+  economy: {
+    tables: [{ id: 'badger.trophies', domain: 'trophies', table: { mode: 'weighted', rows: [{ item: 'honeycomb', weight: 1, count: 1, match: { kind: 'badger' } }] } }],
+    effects: [], goods: [], grants: { player: [], worn: [], weapons: [] }, finds: { counters: [], sections: [] }, marks: [],
+  } };
+
+/** The badger: a `body` bone carrying a `head` bone, a box on each. */
+function badgerBody(): THREE.Group {
+  const fur = new THREE.MeshStandardMaterial({ color: '#4a4440' });
+  const root = new THREE.Group(), body = new THREE.Group(), head = new THREE.Group();
+  body.name = 'body'; head.name = 'head';
+  body.position.set(0, 0.3, 0); head.position.set(0, 0.05, 0.4);
+  body.add(new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.25, 0.7), fur), head);
+  head.add(new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.18, 0.25), fur));
+  root.add(body);
+  return root;
+}
+
+/** A one-second clip that dips the head by `angle` radians and back. */
+function nod(name: string, angle: number): THREE.AnimationClip {
+  const dip = [Math.sin(angle / 2), 0, 0, Math.cos(angle / 2)];
+  return new THREE.AnimationClip(name, 1, [new THREE.QuaternionKeyframeTrack('head.quaternion', [0, 0.5, 1], [0, 0, 0, 1, ...dip, 0, 0, 0, 1])]);
+}
+
+export default defineShard({ slug: 'wrens-hives', name: "Wren's Hives" }, (world) => {
+  world.ground(() => 0, { colourAt: () => [0.45, 0.6, 0.3] });
+  world.spawn(0, 1, 10, 0);
+  // Wren's body is an ordinary part; the talk below stands at her feet
+  world.part('wren', (figure) => {
+    const dress = new THREE.Mesh(new THREE.ConeGeometry(0.45, 1.2, 7), new THREE.MeshStandardMaterial({ color: '#d9962b' }));
+    const head = new THREE.Mesh(new THREE.IcosahedronGeometry(0.25, 1), new THREE.MeshStandardMaterial({ color: '#efe3c4' }));
+    dress.position.y = 0.6; head.position.y = 1.45;
+    figure.add(dress, head);
+    figure.position.set(...WREN_AT);
+  });
+  world.creature('badger', badgerBody(), {
+    species: {
+      kind: 'badger', label: 'Honey badger', type: 'beast', aggressive: true, lockable: true,
+      dims: { bodyY: 0.3, bodyHalfLen: 0.35, bodyRadius: 0.2, headRadius: 0.1, legLen: 0.2, feet: [], halfWidth: 0.2 },
+      variants: [{ id: 'grey', label: 'Honey badger', rarity: 'common', weight: 1, scale: [1, 1], hp: 30,
+        mods: { speed: 1, chargeDist: 1, damageTaken: 1, chargeDamage: 0, relentless: false } }],
+      temperament: pursue, senses, abilities: [bite.ability],
+    },
+    strikes: [bite.strike],
+    size: 'small',
+    clips: [nod('idle', 0.1), nod('walk', 0.3), nod('attack', 0.6)],
+    loops: ['idle', 'walk'],
+    material: { family: 'pbr', vertexColours: true },
+  });
+  const hives = new THREE.Object3D();
+  hives.position.set(0, 0, -14);
+  world.scene.add(hives);
+  world.spawnAt('badger-1', hives, { species: 'badger', variant: 'grey', brain: null, strike: null, seed: 1, scale: 1 });
+}, {
+  // 6. The sections `world` has no call for go in through `extend`: the quest rows, the talk, the item and the loot.
+  extend: (shard) => ({
+    ...shard,
+    quests: { ...shard.quests, flags, quests: [quest], triggers: [badgerDead], dialogue: [wren] },
+    targets: { ...shard.targets, talks: [{ id: 'wren', at: [...WREN_AT], radius: 3, label: 'Talk to Wren', dialogue: 'wren' }] },
+    items: { ...shard.items, catalogue: [{ id: 'honeycomb', label: 'Honeycomb', icon: 'shell', travels: true }] },
+    rows: { ...shard.rows, loot: [loot] },
+  }),
+});
+```
+
+- **Wren** is the talk `wren`, standing at her part's feet. The talk's `dialogue` names her tree; `figure` (optional)
+  names a props model that draws her instead of the engine's stand-in. A tree's `start` is the node E opens on first;
+  a node with no choice whose `when` holds just closes and is offered again later.
+- **The flags join everything.** `accept` sets `wren.met`, the quest's `startWhen`; the death trigger sets
+  `wren.badger-dead`, the first step's `done` and the turn-in's `when`; `turn-in` sets `wren.returned`, the last
+  step's `done`. When every step is done the quest raises `wren.done` and pays `onComplete`.
+- **The loot.** A kill rolls every `trophies` table row whose `match.kind` is the dead creature's `kind`, and pays each
+  player who did real damage to it. The item (`honeycomb`) is a `items.catalogue` row, so the pack knows its name and icon.
+- **Prove it** with a walk proof: `talk('wren')`, `choose('accept')`, `fight('badger')`, `talk('wren')`,
+  `choose('turn-in')`, then `expectQuest('honey-badger', 'complete')`. A proof tape names the quest's fact in
+  `requiredFacts: ['wren.paid']` and the loot in `requiredItems: { honeycomb: 1 }`.
+
+## 2c. Creatures
+
+A creature is three plain rows: a species row (`actors/species`), the strike rows its abilities use, and a look row
+(its skin). The species row carries layers: `type` (a label for quests and the journal; it chooses no mechanics),
+`body` (`skeleton`, `size`, `scale` and the `look` it draws with), `temperament` (its brain, reaction, leash, assist and
+home), `senses`, `abilities` (strike references, in priority order) and `presentation`. Place it with a
+`creatures.spawns` row (`world.spawnAt` in a scene shard). The kit (`@wildshard/kit`) has bodies, temperaments and
+abilities to start from; `wildshard schema list` prints every field.
+
+The same creature can be written three ways, and the shard file holds the same bytes from each:
+`test/one-creature-three-authors.test.ts` (in the sdk) builds all three and compares them.
+
+**SDK TypeScript**, with the kit's helpers:
+
+```ts
+// The dune jackal in TypeScript: the kit's quadruped body, pursue temperament and bite, plus its own rows.
+import { abilities, quadruped, temperament } from '@wildshard/kit';
+
+const bite = abilities.bite({ id: 'jackal.bite', damage: 9, range: 1.6 });
+const { temperament: pursue, senses } = temperament.pursue({ aggro: 16, leash: 30 });
+
+export const jackal = {
+  species: [{
+    id: 'jackal', kind: 'jackal', label: 'Dune jackal', type: 'beast', aggressive: true, lockable: true,
+    dims: { bodyY: 0.5, bodyHalfLen: 0.45, bodyRadius: 0.22, headRadius: 0.12, legLen: 0.42, feet: [], halfWidth: 0.18 },
+    variants: [{ id: 'tawny', label: 'Tawny jackal', rarity: 'common', weight: 1, scale: [0.9, 1.1], hp: 40,
+      mods: { speed: 1, chargeDist: 1, damageTaken: 1, chargeDamage: 0, relentless: false } }],
+    body: quadruped({ look: 'jackal.look' }),
+    temperament: pursue, senses, abilities: [bite.ability],
+  }],
+  strikes: [bite.strike],
+  looks: [{ id: 'jackal.look', species: 'jackal', recipe: 'platform.skin', material: null, parameters: {},
+    animation: { recipe: 'platform.clips', parameters: {} } }],
+};
+```
+
+**Hand-written JSON**, as `data/` rows:
+
+```json
+{
+  "species": [
+    {
+      "id": "jackal",
+      "kind": "jackal",
+      "label": "Dune jackal",
+      "type": "beast",
+      "aggressive": true,
+      "lockable": true,
+      "dims": { "bodyY": 0.5, "bodyHalfLen": 0.45, "bodyRadius": 0.22, "headRadius": 0.12, "legLen": 0.42, "feet": [], "halfWidth": 0.18 },
+      "variants": [
+        {
+          "id": "tawny", "label": "Tawny jackal", "rarity": "common", "weight": 1, "scale": [0.9, 1.1], "hp": 40,
+          "mods": { "speed": 1, "chargeDist": 1, "damageTaken": 1, "chargeDamage": 0, "relentless": false }
+        }
+      ],
+      "body": { "skeleton": "quadruped", "size": "medium", "scale": 1, "look": "jackal.look" },
+      "temperament": {
+        "brain": "pursue",
+        "reaction": "aggressive",
+        "leash": 30,
+        "assist": 0,
+        "home": { "speed": 2, "stop": 1.5 },
+        "tuning": {
+          "awareRadius": 12, "leashRadius": 25, "speed": 1, "returnSpeed": 2, "stopDistance": 1.5,
+          "turnRate": 4, "thinkDivisor": 3, "attackCooldownTicks": 60, "wanderRadius": 4, "wanderEveryTicks": 420
+        }
+      },
+      "senses": { "notice": 16 },
+      "abilities": [{ "use": "jackal.bite", "range": 1.6, "cooldown": 1, "weight": 2 }]
+    }
+  ],
+  "strikes": [
+    {
+      "id": "jackal.bite",
+      "shape": { "kind": "point", "radius": 1.8 },
+      "windup": 0.7, "active": 0.15, "recover": 0.8, "cooldown": 1, "range": 1.6, "damage": 9,
+      "tags": ["creature.bite"], "weight": 2, "speed": 0
+    }
+  ],
+  "looks": [
+    {
+      "id": "jackal.look", "species": "jackal", "recipe": "platform.skin", "material": null, "parameters": {},
+      "animation": { "recipe": "platform.clips", "parameters": {} }
+    }
+  ]
+}
+```
+
+**A Python script** (no SDK), printing the canonical JSON the shard file stores (sorted keys, no spaces):
+
+```python
+# The dune jackal in Python: plain dicts, printed as the shard file's canonical JSON.
+import json
+
+bite = {"id": "jackal.bite", "shape": {"kind": "point", "radius": 1.8}, "windup": 0.7, "active": 0.15,
+        "recover": 0.8, "cooldown": 1, "range": 1.6, "damage": 9, "tags": ["creature.bite"], "weight": 2, "speed": 0}
+
+jackal = {
+    "id": "jackal", "kind": "jackal", "label": "Dune jackal", "type": "beast", "aggressive": True, "lockable": True,
+    "dims": {"bodyY": 0.5, "bodyHalfLen": 0.45, "bodyRadius": 0.22, "headRadius": 0.12, "legLen": 0.42,
+             "feet": [], "halfWidth": 0.18},
+    "variants": [{"id": "tawny", "label": "Tawny jackal", "rarity": "common", "weight": 1, "scale": [0.9, 1.1],
+                  "hp": 40, "mods": {"speed": 1, "chargeDist": 1, "damageTaken": 1, "chargeDamage": 0,
+                                     "relentless": False}}],
+    "body": {"skeleton": "quadruped", "size": "medium", "scale": 1, "look": "jackal.look"},
+    "temperament": {
+        "brain": "pursue", "reaction": "aggressive", "leash": 30, "assist": 0, "home": {"speed": 2, "stop": 1.5},
+        "tuning": {"awareRadius": 12, "leashRadius": 25, "speed": 1, "returnSpeed": 2, "stopDistance": 1.5,
+                   "turnRate": 4, "thinkDivisor": 3, "attackCooldownTicks": 60, "wanderRadius": 4,
+                   "wanderEveryTicks": 420},
+    },
+    "senses": {"notice": 16},
+    "abilities": [{"use": "jackal.bite", "range": 1.6, "cooldown": 1, "weight": 2}],
+}
+
+look = {"id": "jackal.look", "species": "jackal", "recipe": "platform.skin", "material": None, "parameters": {},
+        "animation": {"recipe": "platform.clips", "parameters": {}}}
+
+rows = {"species": [jackal], "strikes": [bite], "looks": [look]}
+print(json.dumps(rows, sort_keys=True, separators=(",", ":"), ensure_ascii=False))
+```
+
+A shard that still keeps a species program (`actors/species-programs`) moves to these rows with
+`speciesProgramToRows` from `@wildshard/sdk/species/toRows`: each species keeps its numbers, its declared brain
+becomes a `creatures.brains` row its temperament names, and strike fields a plain row cannot hold are listed.
+
+**A whole shard written this way:** [`project-wildshard/shard-stranger`](https://github.com/project-wildshard/shard-stranger)
+is a hand-written shard file with no SDK at runtime: plain species, strike and look rows (Python writes two of them), the
+kit's wolf and deer read as plain files, a skeleton horse to ride and a dragon boss. Its README shows the rows and how it
+ships.
 
 ## 3. Budgets
 
@@ -432,7 +995,7 @@ guide names them and points at what prints them:
 
 - **Every saved file in the shard source rebuilds the whole shard**, about 0.1 s after the last save, and the open page
   reloads itself when the new build is ready. Nothing is patched in place: data, generators, behaviour scripts,
-  assets, `shard.config.ts` and `manifest.json` all take the same path.
+  assets, `shard.config.ts` and `data/card.json` all take the same path.
 - **A failed rebuild keeps the last good build** on the page and prints the refusal in the terminal and the browser
   console. Fix it and save again.
 - **Not watched:** `node_modules/`, `.git/`, `dist/`, `public/` and `.worktrees/`. After `pnpm install` or an sdk
@@ -472,8 +1035,11 @@ player can reach it there yet.
 | `no new cell: grid placement is off on the API, or this is not the shard's first upload` | Today's answer: the API does not place yet (below); or the shard had an upload before and no cell |
 
 `wildshard upload --no-place` uploads without taking a cell, for a proof upload you will delete. Only a shard's
-first upload can take a cell, so a shard uploaded with `--no-place` never gets one from a later upload. The links
-point at the share page, which is not built yet (below), and each says `(page not built yet)`.
+first upload can take a cell, so a shard uploaded with `--no-place` never gets one from a later upload. A shard made
+only to prove tooling (a `wildshard new` scaffold or a publish check) takes a `proof-<name>` slug: the API never
+gives a `proof-*` slug a cell, whatever upload sends, so a proof cannot land on the player grid; delete it when its proof
+is done (J453). The links point at the share page, which is not built yet (below), and each says `(page not built
+yet)`.
 
 **Not built yet:**
 
@@ -523,10 +1089,11 @@ an existing folder.
 
 #### new-template
 
-`--template` names `sdk` (the reference world, the default) or `scene` (Mossgate Hollow as one three.js scene module:
-`src/generators/world.ts` builds the whole world, and `wildshard watch .` draws each save in a running page). Any other
-name refuses before `new` writes anything. `--template blender` is retired (J341): a shard is TypeScript three.js scene
-source, and Blender makes the `.glb` models it loads (section 2). Leave the flag out or pass `--template sdk` or `scene`.
+`--template` names `scene` (Mossgate Hollow as one three.js scene module, the default: `src/generators/world.ts` builds
+the whole world, and `wildshard watch .` draws each save in a running page). Any other name refuses before `new` writes
+anything. `--template sdk` is retired (J434: the legacy Template is gone) and `--template blender` too (J341): a shard is
+TypeScript three.js scene source, and Blender makes the `.glb` models it loads (section 2). Leave the flag out or pass
+`--template scene`.
 
 #### new-refused
 
@@ -625,6 +1192,55 @@ run `wildshard check .` again.
 
 ### Validate
 
+#### spawn-aware-radius
+
+`wildshard check`, `wildshard validate` and `wildshard dev` warn when a creature's `awareRadius` covers the player
+spawn. The warning names its spawn id, brain, horizontal distance and radius (height does not protect an arrival).
+Move the creature or player spawn farther apart, or reduce the brain's `awareRadius`. An intentional arrival encounter
+can keep the warning: it does not fail validation or the check verdict. `check --json` retains it in `warnings`.
+
+#### creature-bones
+
+`wildshard check` refuses a creature whose rig has more than 64 bones (every skin variant counts). The phone poses and
+skins each bone every frame. Merge twist and helper bones in the modelling tool, or split the body into two creatures.
+The report card prints each creature's bones, hit volumes and triangles beside the shard's budget tier.
+
+#### creature-volumes
+
+A creature has at most 16 hit volumes: its skeleton's default volumes plus its own `body.volumes`, counted by part.
+Keep one volume per part a hit should tell apart (head, body, a shield); merge the rest.
+
+#### creature-triangles
+
+Each size class has a triangle mark per creature: tiny 1,500, small 3,000, medium 6,000, large 12,000, giant 24,000.
+Over its class's mark `check` warns and the upload still takes it; the creature still counts inside the shard's total
+and its budget tier. Give it a phone LOD with fewer triangles, or a larger size class if the body really is larger.
+
+#### creature-textures
+
+Each size class has a decoded-bytes mark per creature, mostly its textures: tiny 1 MB, small 2 MB, medium 4 MB, large
+8 MB, giant 16 MB. Over it `check` warns. Use a smaller atlas or fewer maps.
+
+#### triangle-budget
+
+The report card prints the shard's static triangles: every GLB's, each geometry once (instances share it). A phone at
+Low holds about 600 k before geometry costs more than its share of memory; over that `check` warns and the upload still
+takes it. Give the heaviest models a phone LOD or a simplified mesh, and reuse models rather than baking unique ones.
+
+#### vertex-layout
+
+WebKit draws through ANGLE's Metal back end, which reads a vertex channel in place only when its stride is a multiple
+of 4 bytes. A tightly packed 3-byte channel (an Int8 normal, a Uint8 colour) or a 6-byte one (three Int16 or Uint16)
+is copied into a second buffer, so the phone holds it twice. `check` prints each such channel on the report card. The
+three layouts the build already wrote (an Int8 normal, a Uint8 colour, a Uint16 colour, 3 wide and packed) report; any
+other copied layout refuses. Write it aligned: `staticGlb` with `meshoptReady` pads it.
+
+A packed static vertex (MEMORY-STRUCTURE STR16) writes every static channel aligned and small: Int8 normals and
+tangents, Uint8 colour, Uint16 UVs, a 4-byte stride for every channel; positions keep their storage, and a colour or
+UV outside 0 to 1 stays float. It is a build option, off by default: call `setStaticVertexPacking(true)` from
+`@wildshard/sdk/bake/packedVertex` at the top of your generator, and `staticGlb` and `compactPhoneGlb` write it.
+Delete the call to go back. The engine reads both layouts.
+
 #### validate-refused
 
 Shard-format's checks refused the built shard. The message names the check; RUNTIME-CONTRACT §8 lists what is refused.
@@ -639,7 +1255,8 @@ If a fresh, unedited build still fails, report it with the message.
 
 #### proof-failed
 
-The tape played, but a step it expected did not happen. Fix the data, or the tape step.
+The tape (or the walk proof) played, but a step it expected did not happen. Fix the data, or the tape or walk step.
+A walk proof's refusal names what the page showed instead ("Walk proofs", section 1).
 
 ### Budgets
 
@@ -715,7 +1332,8 @@ Codes `declared-costs`, `performance-targets` (shard-format checking the costs t
 The shard's content changed after its hero was captured, or the card names images `hero.json` has no stamp for. The
 hero must show the current world: capture it again (`wildshard hero . --base <url>`). Only if the images already show
 the current world, `wildshard hero . --stamp-existing`. A curated hero (`"curated": true` in `hero.json`, "The hero")
-keeps its art: re-stamp it with `wildshard hero . --stamp-existing`.
+keeps its art: the build re-stamps it when only the content moved, and after you swap its images you re-stamp it with
+`wildshard hero . --stamp-existing`.
 
 #### hero-not-in-product
 
@@ -726,6 +1344,19 @@ prepare again ("Uploading", steps 3 and 4).
 
 Upload only: this new version's hero is the same as the previous version's (J306: a new version needs a new hero).
 Capture a new hero, build, prepare and upload again.
+
+#### hero-missing
+
+Upload only (and api-server's commit, as a 422): the shard file has no captured hero. `[hero-missing]`: no card in its
+discovery, manifest or presentation; `[hero-generated]`: the card is still the generated `data:` placeholder `wildshard
+new` gives. No zone reaches zone select without a hero (Jake, 2026-11-17). Run `wildshard dev .`, then `wildshard hero .
+--base <url>` with the URL it printed, look at the three images, then build, prepare and upload again ("The hero").
+
+#### hero-size
+
+Upload only (and api-server's commit, as a 422): a card image is not in the shard file or is not a PNG, JPEG or WebP
+(`[hero-image]`), or is the wrong size (`[hero-size]`). The hero is thumb 640x360, portrait 804x1626 and landscape
+1600x900, the sizes `wildshard hero` writes. Capture it again rather than resizing by hand.
 
 #### audio-refused
 
@@ -937,6 +1568,12 @@ code; its printed fix says what to change. In a shard repo it runs the repo's ow
 root, as the repo's `pnpm lint` does (with its `lint/ratchet.json`). `wildshard new` writes one (the sdk's own rules, its plugins
 under `node_modules/@wildshard/sdk/lint/`; oxlint comes with the sdk), so a new repo lints from its first check; a repo
 without one skips lint and says so.
+
+#### pin-not-sdk
+
+Your SDK chooses the shard format and the engine: a shard repo lists `@wildshard/format` (and `@wildshard/engine`
+while its tests import it) at exactly the versions the SDK pins. `wildshard update --pins` moves them with the SDK in
+one command. A new format or engine release changes nothing in your repo until you update the SDK.
 
 #### lint-not-run
 
@@ -1184,3 +1821,163 @@ If step 3 or 4 fails, it puts `package.json` and `pnpm-lock.yaml` back and insta
 start unless `git status` is clean (`update-pins-dirty`, `update-pins-no-git`): a codemod edits your files. Done when
 its last line reads `on @wildshard/sdk <version>, check pass`. Commit `package.json`, `pnpm-lock.yaml`, the guide,
 the skills and any codemod edit together. A refusal is `update-pins` (section 6).
+
+## 8. Primitives
+
+A **primitive** is engine code your shard switches on with data: no host list, no engine change. The server reads your
+shard file's sections and works out which primitives to run (`derivePrimitives` in `@wildshard/format/primitives`).
+Each primitive's version is its section's version, the `@N` in its row of `shard.json`; a change to a primitive is
+additive, and a removal is announced a release ahead.
+
+Some primitives have no section yet: they are opened as they are, switched on by naming their host in
+`server/native-assembly.json`, until their plan row (meta repo `docs/plans/ONE-FORMAT-PLAN.md`, named below) gives
+them one. Every page says which.
+
+### `collision`
+
+Solid ground and walls for players and creatures, plus static collision pieces. **Switched on:** always. **Replaces:**
+`collision`, `collision.pieces`. **Used by:** every shard. **Row:** OF41.
+
+### `plumbing`
+
+The small services every shard leans on: commands, decisions, strings, the content catalogue, audio cues and scenes,
+the player-enter hook, bag finds, adventure state and the creature frame hook. `debug.expose` is one of them and is
+refused on prod (OF18c). **Switched on:** always. **Used by:** every shard. **Row:** OF18.
+
+### `population`
+
+Who lives in a cell, when and how many: rosters, conditional spawn rows (quest stage, time of day, waves, a respawn
+timer, a rank, a player-scaled count), shelter in bad weather, and shared kill credit. **Switched on:** any `creatures.spawns` row in
+`actors/creatures`. **Used by:** Pine Hollow, Driftwood Isle, Nalati, Dunes, Sky Reach. **Row:** OF29.
+
+### `elites`
+
+Ranked creatures (veteran, elite, champion, legendary) with their own hp, damage, size and loot. **Switched on:** a
+`creatures.spawns` row with a `rank` in `actors/creatures`, or an `elite` encounter in `combat/encounters`. **Used by:** Pine Hollow, Nalati. **Row:** OF33.
+
+### `boss`
+
+One fight: an hp bar, phases, adds, a reward and a saved record; it starts placed, spawned or resident. **Switched
+on:** a `boss` encounter in `combat/encounters`, or a `runtime.spawns.bosses` row in `actors/spawns`. **Used by:**
+Pine Hollow, Dunes, Sky Reach, Brasscap. **Row:** OF34.
+
+### `boss.arena`
+
+A boss's bounds, a closed room or open ground; leaving them resets the fight. **Switched on:** an encounter with
+`arena.bounds` in `combat/encounters`. **Used by:** Nalati. **Row:** OF34.
+
+### `riding`
+
+Ride any creature that has a `mount` row: the rider sits at its seat socket (default `seat`) and moves at its gaits,
+slowest first; a flyer (`fly: true`, with the species' `flight` row) takes off and lands. Taming joins it. **Switched
+on:** any species with a `mount` row in `actors/species`. **Used by:** Nalati; the stranger shard's skeleton horse.
+**Row:** CC40.
+
+**SDK TypeScript** (`src/sharddev/guide/riding.example.ts` in the sdk, type-checked with it):
+
+```ts
+// A rideable dune camel: the kit's quadruped body and passive temperament, and a mount row with its four gaits.
+import { quadruped, temperament } from '@wildshard/kit';
+import type { ShardRowsInput } from '@wildshard/format/rows';
+
+const { temperament: calm, senses } = temperament.passive();
+
+export const camel: Pick<ShardRowsInput, 'species' | 'looks'> = {
+  species: [{
+    id: 'camel', kind: 'camel', label: 'Dune camel', type: 'beast', aggressive: false, lockable: true,
+    dims: { bodyY: 1.4, bodyHalfLen: 0.9, bodyRadius: 0.5, headRadius: 0.2, legLen: 1.1, feet: [], halfWidth: 0.45 },
+    variants: [{ id: 'sand', label: 'Sand camel', rarity: 'common', weight: 1, scale: [0.95, 1.05], hp: 120,
+      mods: { speed: 1, chargeDist: 1, damageTaken: 1, chargeDamage: 0, relentless: false } }],
+    body: quadruped({ look: 'camel.look' }),
+    temperament: calm, senses,
+    mount: { gaits: { walk: 1.8, trot: 4.5, canter: 8.5, gallop: 13 } },
+  }],
+  looks: [{ id: 'camel.look', species: 'camel', recipe: 'platform.skin', material: null, parameters: {},
+    animation: { recipe: 'platform.clips', parameters: {} } }],
+};
+```
+
+**Hand-written JSON**, as `data/` rows (the same rows; `guide-primitives.test.ts` parses them):
+
+```json
+{
+  "species": [
+    {
+      "id": "camel", "kind": "camel", "label": "Dune camel", "type": "beast", "aggressive": false, "lockable": true,
+      "dims": { "bodyY": 1.4, "bodyHalfLen": 0.9, "bodyRadius": 0.5, "headRadius": 0.2, "legLen": 1.1, "feet": [], "halfWidth": 0.45 },
+      "variants": [
+        {
+          "id": "sand", "label": "Sand camel", "rarity": "common", "weight": 1, "scale": [0.95, 1.05], "hp": 120,
+          "mods": { "speed": 1, "chargeDist": 1, "damageTaken": 1, "chargeDamage": 0, "relentless": false }
+        }
+      ],
+      "body": { "skeleton": "quadruped", "size": "medium", "scale": 1, "look": "camel.look" },
+      "temperament": {
+        "brain": "hunt", "reaction": "passive", "leash": 50, "assist": 8, "home": { "speed": 3.2, "stop": 1.5 },
+        "tuning": {
+          "hp": 60, "sightRange": 30, "sightRangeGraze": 14, "sightCone": 0.9599310885968813, "hearStill": 3,
+          "hearCrouch": 6, "hearWalk": 12, "hearSprint": 24, "noticeRate": 0.3, "forgetRate": 0.3, "alertAt": 0.45,
+          "boltAt": 1, "freezeMin": 4, "freezeMax": 7, "relaxAfter": 3.5, "panicDist": 6, "runSpeed": 6,
+          "trotSpeed": 3.2, "fleeMinTime": 1.5, "fleeUntil": 35, "fleeUntilMax": 50, "fleeMaxTime": 8, "lookBack": 2.5,
+          "waryTime": 10, "waryBoost": 1.2, "herdAlertRadius": 8, "herdBoltDelayMin": 0.4, "herdBoltDelayMax": 1.2,
+          "impactSpook": 4, "impactAlert": 10
+        }
+      },
+      "senses": {
+        "notice": 30, "sight": { "range": 30, "cone": 0.9599310885968813, "graze": 14 },
+        "hearing": { "still": 3, "crouch": 6, "walk": 12, "sprint": 24 }
+      },
+      "mount": { "gaits": { "walk": 1.8, "trot": 4.5, "canter": 8.5, "gallop": 13 } }
+    }
+  ],
+  "looks": [
+    {
+      "id": "camel.look", "species": "camel", "recipe": "platform.skin", "material": null, "parameters": {},
+      "animation": { "recipe": "platform.clips", "parameters": {} }
+    }
+  ]
+}
+```
+
+### `patrol`
+
+A group walks a route, engages what it meets and returns. **Switched on:** any `creatures.patrols` row in `actors/creatures`.
+**Used by:** Nalati. **Row:** OF37.
+
+### `held.melee`
+
+Swung weapons from `held/*` rows. **Switched on:** a `weapon` item row with no `ranged` in `combat/items`. **Used
+by:** Driftwood Isle, Nine Dragon, Dunes, Sky Reach, Nalati. **Row:** OF38.
+
+### `held.ranged`
+
+Bows and bolts from `held/*` rows: ammunition, loadout and aim. **Switched on:** an item row with `ranged` in
+`combat/items`. **Used by:** Pine Hollow, Nalati. **Row:** OF38.
+
+### `sky`
+
+The day cycle and its sky. **Switched on:** any `rows.days` row in `world/days`. **Used by:** Driftwood Isle, Pine
+Hollow, Nalati. **Row:** OF41.
+
+### `weather`
+
+Weather states and their transitions: overcast, rain, wet, wind and fog. **Switched on:** any `rows.weather` row in
+`world/weather`. **Used by:** Pine Hollow, Nalati, Dunes. **Row:** OF41.
+
+### `water.sea`
+
+An open sea with waves. **Switched on:** a `sea` water row in `world/water`. **Used by:** Driftwood Isle. **Row:** OF40.
+
+### `water.field`
+
+Ponds and wet ground across a field. **Switched on:** a water field in `world/field`. **Used by:** Nalati. **Row:** OF40.
+
+### `grapple`
+
+A grappling hook between hook points. **Switched on:** a `modes.grapple` row in `state/modes`. **Used by:** Nine Dragon.
+**Row:** OF41.
+
+### `portal`
+
+Ride a portal from one place to another. **Switched on:** a `portalLink` entryway in `world/edge`. **Used by:** Nine Dragon.
+**Row:** OF41.

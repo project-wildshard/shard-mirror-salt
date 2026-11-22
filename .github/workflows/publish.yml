@@ -20,7 +20,7 @@ on:
         options: [staging, prod]
         default: staging
       version:
-        description: X.Y.Z, or auto (the catalogue's version, patch + 1)
+        description: Must match package.json (auto uses the declared version)
         type: string
         default: auto
       engine:
@@ -143,7 +143,12 @@ jobs:
         run: pnpm exec wildshard check . tmp/publish/check
       - name: The version upload sends
         id: version
-        run: node scripts/publish-shard.mjs version "${{ steps.product.outputs.slug }}" "${{ inputs.version }}"
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+        run: |
+          own=$(node -p 'JSON.parse(require("node:fs").readFileSync("package.json", "utf8")).version')
+          test "$REQUESTED_VERSION" = auto -o "$REQUESTED_VERSION" = "$own" || { echo '::error::version must match package.json'; exit 1; }
+          node scripts/publish-shard.mjs version "${{ steps.product.outputs.slug }}" "$own"
       - name: Install phone WebKit for prepare
         run: |
           # Prepare uses the directly installed dev package or CLI's dev package.

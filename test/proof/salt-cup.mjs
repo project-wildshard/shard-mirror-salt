@@ -7,30 +7,17 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { Vector3 } from 'three';
-import { loadHeadlessFolder } from '@wildshard/engine/host/headlessFolder';
-import { loadRapier } from '@wildshard/engine/physics/rapier';
-import { outputDescriptor } from '@wildshard/engine/game/shardfile/outputDescriptor';
-import { serverInputFiles } from '@wildshard/engine/game/shardfile/serverSkinRigs';
-import { createShardfileSim } from '@wildshard/engine/game/plugin/simulation';
-import { actRoutes } from '@wildshard/engine/sim/actRoutes';
-import { questBooks } from '@wildshard/engine/quest/players';
+import { openShardSim } from '@wildshard/dev/test/proof';
 import { ARENA } from '../../src/generators/hollow.ts';
 
 const [folder, physics, output] = process.argv.slice(2);
 assert.ok(folder && physics && output, 'Usage: salt-cup.mjs <cooked-folder> <rapier.wasm> <report.json>');
-const { shardfile } = await loadHeadlessFolder(folder);
-const descriptor = outputDescriptor(shardfile);
-assert.ok(descriptor);
-const assets = new Map(serverInputFiles(descriptor.index.files, shardfile).map(file => [
-  file.commons === true ? `commons:${file.hash}` : file.hash, Uint8Array.from(readFileSync(join(folder, file.path))),
-]));
-const facts = [], coins = [], tape = [];
-const sim = createShardfileSim(shardfile, assets, { rapier: await loadRapier(readFileSync(physics)), sections: descriptor.sections,
-  quest: { fact: (flag, who) => { facts.push({ flag, who }); }, coins: (amount, who) => { coins.push({ amount, who }); } },
-});
+const facts = [], tape = [];
+const proof = await openShardSim(folder, { physics, fact: (flag, who) => { facts.push({ flag, who }); } });
+const { shardfile, sim, coins } = proof;
 const { host, quest, vehicles } = sim;
 assert.ok(vehicles);
-const book = questBooks(host).lead, actor = host.players.get(book.player);
+const book = proof.books().lead, actor = host.players.get(book.player);
 const cup = book.quests.find(item => item.def.id === 'mirror.cup');
 const cupRow = shardfile.quests.quests.find(item => item.id === 'mirror.cup');
 assert.ok(actor && cup && cupRow);
@@ -50,10 +37,7 @@ function put(x, z) {
   host.step();
 }
 function claim(id) {
-  const route = actRoutes(host).claims.get(id);
-  assert.ok(route, `No native claim for ${id}`);
-  route(book.player);
-  host.step();
+  proof.claim(id, book.player);
 }
 function talk(id, choice, oldStep, nextStep, flag) {
   const index = shardfile.targets.talks.findIndex(target => target.id === id);

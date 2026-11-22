@@ -6,7 +6,7 @@ import { roadAt, groundHeight } from '../src/generators/ground.ts';
 import { campBodies } from '../src/generators/camps.ts';
 // Author sources resolve with the SDK's bundler rules. Load their runtime
 // data through the hook above while the test uses the Node-only tsconfig.
-/** @typedef {{id:string, steps:{id:string, count?:string[], done:{all:string[]}, markers:{hideWhen?:unknown}[]}[], startWhen?:unknown}} Quest */
+/** @typedef {Parameters<typeof import('@wildshard/dev/test/quest').authoredQuest>[0]} Quest */
 /** @typedef {{id:string, next:string|null, sets?:string[]}} Choice */
 /** @typedef {{id:string, nodes:{id:string, sets?:string[], choices:Choice[]}[]}} Tree */
 /** @type {{ BOOM_WRECK:{x:number,z:number}, CUP:{done:string,entered:string,licensed:string,boomFitted:string,roadReported:string,sides:{hounds:string}},
@@ -20,6 +20,7 @@ test('the chain runs nine steps, with the licence turn-in and the Colossus last'
   assert.deepEqual(chain.steps.map((s) => s.id), ['arches', 'boom', 'fit', 'crabs', 'road', 'rim', 'slalom', 'canyon', 'colossus']);
   const licence = chain.steps[0];
   assert.ok(licence);
+  assert.ok(licence.markers);
   assert.deepEqual(licence.done, { all: [CUP.licensed] });
   assert.deepEqual(licence.markers.map((m) => m.hideWhen), [
     { all: ['mirror.arches.beat'] }, { all: ['mirror.arches.beat'] }, { none: ['mirror.arches.beat'] },
@@ -29,10 +30,10 @@ test('the chain runs nine steps, with the licence turn-in and the Colossus last'
 });
 
 test('native quest state waits at the boss gate, then completes once on the defeat flag', async () => {
-  const { QuestState } = await import(import.meta.resolve('@wildshard/engine/quest/core'));
-  const { Flags } = await import(import.meta.resolve('@wildshard/engine/world/interact/flags'));
-  const flags = new Flags('mirror-salt-proof', false);
-  const quest = new QuestState(chain, flags);
+  assert.ok(chain);
+  const { authoredQuest, questFlags } = await import('@wildshard/dev/test/quest');
+  const flags = questFlags('mirror-salt-proof');
+  const quest = authoredQuest(chain, flags);
   let completions = 0;
   try {
     quest.observe({ complete: () => { completions += 1; } });

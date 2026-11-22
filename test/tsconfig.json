@@ -1,6 +1,14 @@
 {
   "extends": "../kit/tsconfig.json",
-  // The shard's own tests. src/ is the author's three.js scene: `wildshard check` lints and builds it.
-  "compilerOptions": { "allowJs": true, "checkJs": true },
+  // SDK native helpers expose the same TypeScript graph as author builds.
+  // Runtime Node resolves that graph through @wildshard/dev/test/node.
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["es2024", "DOM", "DOM.Iterable"],
+    "erasableSyntaxOnly": false
+  },
   "include": ["*.mjs"]
 }

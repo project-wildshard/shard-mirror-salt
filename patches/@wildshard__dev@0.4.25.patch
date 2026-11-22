@@ -1,0 +1,10 @@
+diff --git a/src/sharddev/test/proof.ts b/src/sharddev/test/proof.ts
+index 8e9590bb48a4c9c8ef5fc1b90dc132181e12eae9..43998038b7cd23952c5c85938218a45b9a36fe78 100644
+--- a/src/sharddev/test/proof.ts
++++ b/src/sharddev/test/proof.ts
+@@ -1,3 +1,5 @@
++/// <reference types="vite/client" />
++import type {} from "@wildshard/engine/game/types";
+ // oxlint-disable-next-line import/no-unassigned-import -- The sim's Math goes in before any module body runs.
+ import '@wildshard/engine/core/portableMathFirst';
+ // oxlint-disable-next-line import/no-nodejs-modules -- A proof reads its built folder and the pinned physics bytes from disk.
