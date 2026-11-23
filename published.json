@@ -1,0 +1,9 @@
+{
+  "mirror-salt": {
+    "version": "0.0.6",
+    "revision": 6,
+    "hash": "edb4a7b304cf56599565178ff75ee3da112944e1e9a34d38e4d223ad2ff47b9a",
+    "channel": "staging",
+    "commit": "8382ad9ac8ab1b2a70e203ea090f281f45c476b0"
+  }
+}
