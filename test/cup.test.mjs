@@ -83,3 +83,12 @@ test('the boom lies by a hulk on level ground, off the roads, with its search ta
   const road = roadAt(BOOM_WRECK.x, BOOM_WRECK.z); assert.ok(road === null || road.weight < 0.5);
   assert.equal(CUP_TALKS[0]?.dialogue, 'mirror.boom-wreck');
 });
+
+test('the completion card opens on the Cup, after the Colossus (MSZ45)', async () => {
+  assert.ok(chain);
+  const { MIRROR_SALT_COMPLETION } = await import(new URL('../src/generators/completion.ts', import.meta.url).href);
+  const { parseCompletion } = await import('@wildshard/format/completion');
+  assert.equal(MIRROR_SALT_COMPLETION.doneFlag, chain.completeFlag);
+  assert.deepEqual(chain.steps.at(-1)?.done, { all: ['dead:salt-colossus'] });
+  assert.deepEqual(parseCompletion(MIRROR_SALT_COMPLETION), MIRROR_SALT_COMPLETION);
+});

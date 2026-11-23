@@ -3,6 +3,7 @@ import identity from '../identity.json' with { type: 'json' };
 import { buildCanyon, CANYON_DECISIONS, canyonRows, COLOSSUS_MOVES, colossusSpots } from './canyon.ts';
 import { buildCourseMarks } from './courseMarks.ts';
 import { courseRows } from './courses.ts';
+import { MIRROR_SALT_COMPLETION } from './completion.ts';
 import { CUP_DIALOGUE, CUP_QUESTS, CUP_REPLACES, CUP_TALKS } from './cup.ts';
 import { buildCupLandings } from './cupLandings.ts';
 import { BRAINS } from './creatures.ts';
@@ -45,4 +46,6 @@ export const shard = defineShard(identity, (world) => {
   decisions: [...PANS_DECISIONS, ...CANYON_DECISIONS],
   // MSZ36: the Colossus's chase leaps and stands
   moves: COLOSSUS_MOVES, spots: colossusSpots(),
+  // MSZ45: the card after the Cup, once the Colossus is down
+  completion: MIRROR_SALT_COMPLETION,
 });
