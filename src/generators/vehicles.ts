@@ -5,6 +5,7 @@
 // at y 0, facing -z; `seat.*` marks are where riders sit or stand, `leave.*` where they step off, and its `solid()` meshes
 // are its hull. shard.ts runs it after world.ts's scene, with its materials.
 import * as THREE from 'three';
+import { signBoard } from './signBoard.ts';
 import { solid, type ShardWorld } from '@wildshard/sdk/scene/author';
 import { paintCanvas } from '@wildshard/sdk/scene/canvas';
 import { PENNANT_REWARD, REWARD_DOCK, REWARD_KIND } from './finds.ts';
@@ -115,8 +116,7 @@ function shelter(M: Materials, d: DockSpot): THREE.Group {
   const roof = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.1, 3.0), M.wood); roof.position.set(0, 2.4, 0); roof.rotation.x = -0.17; g.add(roof);
   const crate = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.7, 0.8), M.stoneDark); crate.position.set(0.3, 0.35, 0.5); g.add(crate);
   const signPost = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 3.0, 6), M.post); signPost.position.set(0, 1.5, -1.9); g.add(signPost);
-  const sign = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.8), signMaterial(d.name)); sign.position.set(0, 2.6, -1.93); sign.rotation.y = Math.PI; g.add(sign);
-  const back = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.8), signMaterial(d.name)); back.position.set(0, 2.6, -1.87); g.add(back);
+  const sign = signBoard(new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.8), signMaterial(d.name)), 1.6, 0.8, M.wood, 0.05, true); sign.position.set(0, 2.6, -1.93); sign.rotation.y = Math.PI; g.add(sign);
   const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 8), M.lamp); lamp.position.set(0, 3.1, -1.9); g.add(lamp);
   g.traverse((o) => { if (o instanceof THREE.Mesh) o.castShadow = true; });
   return g;

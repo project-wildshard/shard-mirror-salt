@@ -4,6 +4,7 @@
 // canvas is `paintCanvas`; the cloth and streamer wobble of the cleanroom's loop is `animate(..., sway(...))`; the dust is
 // a `Points` cloud that drifts. The phone tier is the engine's: it drops the planar mirror and the dust by itself.
 import * as THREE from 'three';
+import { signBoard } from './signBoard.ts';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { animate, drift, solid, sway, Water, type ShardWorld } from '@wildshard/sdk/scene/author';
 import { paintCanvas } from '@wildshard/sdk/scene/canvas';
@@ -131,7 +132,7 @@ export function gates(part: THREE.Group, M: Materials): void {
     }
     if (ends) put(M.finish, new THREE.PlaneGeometry((g.width - 2.2) * 2, 0.6).rotateX(-Math.PI / 2).rotateY(g.yaw).translate(g.x, 0.07, g.z));
     const board = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1.6), numberMaterial(i));
-    board.position.set(g.x, i === 0 ? 4.2 : g.height - 2.6, g.z); board.rotation.y = g.yaw;
+    signBoard(board, 1.6, 1.6, M.post, 0.08, true); board.position.set(g.x, i === 0 ? 4.2 : g.height - 2.6, g.z); board.rotation.y = g.yaw;
     part.add(board);
   });
   for (const [mat, geos] of byMat) {

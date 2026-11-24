@@ -1,0 +1,1 @@
+QA-11-24 row 14 (J510): every printed sign is a face on a board. The stall signs, the GARAGE sign, the find-site boards, SUN LOOKOUT and the gate numbers were bare planes; signBoard.ts hangs a wood board behind each face (two-sided where the old plane was). Pennants, the Salt Cup banner and the finish strip stay flat: cloth and paint.

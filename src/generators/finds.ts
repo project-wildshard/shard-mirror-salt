@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { signBoard } from './signBoard.ts';
 import { solid, type ShardWorld } from '@wildshard/sdk/scene/author';
 import type { Shardfile } from '@wildshard/format/shardSchema';
 import { groundHeight } from './ground.ts';
@@ -124,7 +125,7 @@ export function buildFinds(world: ShardWorld, materials: Materials): void {
         group.add(post);
       }
       const board = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 0.8), boardMaterial(at.title, [], 256, 128));
-      board.position.set(0, 1.27, 0.05);
+      signBoard(board, 1.6, 0.8, materials.wood, 0.06); board.position.set(0, 1.27, 0.05);
       group.add(board);
       part.add(group);
     }, { panel: id });

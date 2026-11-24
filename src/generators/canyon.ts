@@ -8,6 +8,7 @@
 // circle over the north-east rim. Every named place of the cell is a region trigger: this file lays the yard's, the arch
 // line's, the canyon's and the rim's (the Mirror, the pans and the wrecks lay their own).
 import * as THREE from 'three';
+import { signBoard } from './signBoard.ts';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { animate, solid, sway, type ShardWorld } from '@wildshard/sdk/scene/author';
 import { paintCanvas } from '@wildshard/sdk/scene/canvas';
@@ -126,7 +127,7 @@ function lookout(part: THREE.Group, M: Materials): void {
     c.fillStyle = '#fff2d0'; c.font = 'bold 34px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('SUN LOOKOUT', 128, 50);
   });
   const sign = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.9), new THREE.MeshStandardMaterial({ map, emissive: '#ffffff', emissiveMap: map, emissiveIntensity: 0.35, side: THREE.DoubleSide }));
-  sign.position.set(-2.2, 1.7, 3.2); sign.rotation.y = Math.PI; g.add(sign); // its face toward the spur, where players come from
+  signBoard(sign, 2.4, 0.9, M.wood, 0.07, true); sign.position.set(-2.2, 1.7, 3.2); sign.rotation.y = Math.PI; g.add(sign); // its face toward the spur, where players come from
   for (const sx of [-3.3, -1.1]) { const post = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.7, 0.1), M.wood); post.position.set(sx, 0.85, 3.2); g.add(post); }
   g.traverse((o) => { if (o instanceof THREE.Mesh) o.castShadow = true; });
   part.add(g);

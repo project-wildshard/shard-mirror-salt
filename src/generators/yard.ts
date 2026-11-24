@@ -3,6 +3,7 @@
 // across the GO line. The Marshal's talk and the board's reading are `targets.talks` (shard.ts adds them with `YARD_TALKS`
 // and `YARD_DIALOGUE`). The board reads the player's best for each of the four Cup races (MSZ26b).
 import * as THREE from 'three';
+import { signBoard } from './signBoard.ts';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { animate, solid, sway, type ShardWorld } from '@wildshard/sdk/scene/author';
 import { paintCanvas } from '@wildshard/sdk/scene/canvas';
@@ -140,7 +141,7 @@ function stands(part: THREE.Group, M: Materials): void {
 function signs(part: THREE.Group, M: Materials): void {
   const { x, z } = YARD.GARAGE, y = groundHeight(x, z);
   const garage = new THREE.Mesh(new THREE.PlaneGeometry(4, 1.2), boardMaterial('GARAGE', ['buggy  ·  land-sail'], 384, 128));
-  garage.position.set(x, y + 3.6, z); garage.rotation.y = Math.PI; part.add(garage);
+  signBoard(garage, 4, 1.2, M.wood, 0.08); garage.position.set(x, y + 3.6, z); garage.rotation.y = Math.PI; part.add(garage);
   for (const sx of [-2.1, 2.1]) { const post = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 4.2, 6), M.post); post.position.set(x + sx, y + 2.1, z); part.add(post); }
   const g0 = GATES[0] ?? { x: 0, z: 140, yaw: 0, width: 8 }, across = new THREE.Vector3(Math.cos(g0.yaw), 0, -Math.sin(g0.yaw)), half = g0.width + 3;
   for (const side of [-1, 1]) {
