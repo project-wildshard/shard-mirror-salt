@@ -17,5 +17,3 @@ blob-report/
 out/
 tmp/
 .cache/
-public/shardfiles/
-public/assets/*/map/
