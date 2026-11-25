@@ -42,7 +42,7 @@
     "@types/three": "0.186.0",
     "@typescript/typescript6": "6.0.2",
     "@wildshard/dev": "0.5.1",
-    "npm-bin-deps": "2.1.0",
+    "npm-bin-deps": "2.2.0",
     "oxlint": "1.89.0",
     "playwright": "1.65.0"
   },
@@ -140,8 +140,9 @@
     "oxfmt": "0.74.0",
     "oxlint-tsgolint": "7.0.2004"
   },
-  "binDependenciesInstaller": "npm",
+  "binDependenciesInstaller": "pnpm",
   "wildshard": {
     "migrated": "0.5.1"
-  }
+  },
+  "binDependenciesProjectSettings": false
 }
