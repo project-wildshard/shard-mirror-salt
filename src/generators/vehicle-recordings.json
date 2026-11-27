@@ -1,7 +1,7 @@
 {
-  "/assets/sfx/mirror-salt-vehicle/buggy-motor.m4a": "audio/mirror-salt-vehicle/buggy-motor.m4a",
-  "/assets/sfx/mirror-salt-vehicle/buggy-skid.m4a": "audio/mirror-salt-vehicle/buggy-skid.m4a",
-  "/assets/sfx/mirror-salt-vehicle/sail-luff.m4a": "audio/mirror-salt-vehicle/sail-luff.m4a",
-  "/assets/sfx/mirror-salt-vehicle/sail-creak.m4a": "audio/mirror-salt-vehicle/sail-creak.m4a",
-  "/assets/sfx/mirror-salt-vehicle/horn.m4a": "audio/mirror-salt-vehicle/horn.m4a"
+  "/assets/mirror-salt/sfx/vehicle/buggy-motor.m4a": "static/assets/mirror-salt/sfx/vehicle/buggy-motor.m4a",
+  "/assets/mirror-salt/sfx/vehicle/buggy-skid.m4a": "static/assets/mirror-salt/sfx/vehicle/buggy-skid.m4a",
+  "/assets/mirror-salt/sfx/vehicle/sail-luff.m4a": "static/assets/mirror-salt/sfx/vehicle/sail-luff.m4a",
+  "/assets/mirror-salt/sfx/vehicle/sail-creak.m4a": "static/assets/mirror-salt/sfx/vehicle/sail-creak.m4a",
+  "/assets/mirror-salt/sfx/vehicle/horn.m4a": "static/assets/mirror-salt/sfx/vehicle/horn.m4a"
 }

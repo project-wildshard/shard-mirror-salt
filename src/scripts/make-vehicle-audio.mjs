@@ -3,7 +3,7 @@
 import { mkdirSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 
-const directory = 'src/audio/mirror-salt-vehicle';
+const directory = 'src/static/assets/mirror-salt/sfx/vehicle';
 const rate = 48000;
 const wave = cycles => Math.sin(2 * Math.PI * cycles);
 const pulse = (hz, t, strength) => Math.pow(0.5 + 0.5 * wave(hz * t), strength);

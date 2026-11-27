@@ -9,7 +9,12 @@
       "/assets/mirror-salt/music/mirror-salt-piano/pine-tension-cc014e5b.m4a",
       "/assets/mirror-salt/music/mirror-salt-piano/sting-chunk-1f540734.m4a",
       "/assets/mirror-salt/music/mirror-salt-piano/sting-death-8ee9ff5d.m4a",
-      "/assets/mirror-salt/music/mirror-salt-piano/sting-pickup-5ba19a30.m4a"
+      "/assets/mirror-salt/music/mirror-salt-piano/sting-pickup-5ba19a30.m4a",
+      "/assets/mirror-salt/sfx/vehicle/buggy-motor.m4a",
+      "/assets/mirror-salt/sfx/vehicle/buggy-skid.m4a",
+      "/assets/mirror-salt/sfx/vehicle/horn.m4a",
+      "/assets/mirror-salt/sfx/vehicle/sail-creak.m4a",
+      "/assets/mirror-salt/sfx/vehicle/sail-luff.m4a"
     ]
   }
 }
