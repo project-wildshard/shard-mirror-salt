@@ -1,4 +1,5 @@
-// MSZ39. Original synth recipes for the flat and four local beds. The music is the engine's piano catalogue (J304).
+// MSZ39. Original synth recipes for the flat and four local beds. The music is the engine's piano pine and island takes,
+// carried as the shard's own set (meta SF23: the engine retires those two slots; title stays the engine's).
 import type { ShardWorld } from '@wildshard/sdk/scene/author';
 import type { Shardfile } from '@wildshard/format/shardSchema';
 import { parseAudio } from '@wildshard/format/shardfileAssets';
@@ -8,6 +9,8 @@ import vehicleRecordings from './vehicle-recordings.json' with { type: 'json' };
 const DAY = 'pine';
 const RACE = 'island';
 const BOSS = 'title';
+/** SF23: the shard's own slot set, `static/assets/mirror-salt/music/mirror-salt-piano/` (listed in mounts.json). */
+const OWN_SET = 'mirror-salt';
 const REGION_IDS = ['pans', 'wrecks', 'canyon', 'yard'] as const;
 const BEDS = ['flat', ...REGION_IDS];
 type Audio = Shardfile['audio'];
@@ -60,6 +63,7 @@ export function saltAudio(audio: Audio): Audio {
   return { ...audio, zones: saltZones, music: {
     ...music,
     slots: [...music.slots, RACE],
+    sets: { ...music.sets, [DAY]: OWN_SET, [RACE]: OWN_SET },
     bootSlots: [...music.bootSlots, RACE],
     selection: [...music.selection, race],
     lifecycle: { ...music.lifecycle, logChanges: true },
